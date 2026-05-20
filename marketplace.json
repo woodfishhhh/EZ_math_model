@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "name": "ez-math-model",
   "display_name": "EZ Math Model",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "summary": "A contest-ready mathematical modeling Agent Skill for problem intake, modeling, solving, paper writing, quality audit, and packaging.",
   "description": "Use when solving CUMCM, MCM, ICM, graduate mathematical modeling contests, or course modeling tasks that require a full modeling workflow.",
   "author": {
@@ -12,10 +12,10 @@
   "license": "MIT",
   "repository": "https://github.com/woodfishhhh/EZ_math_model",
   "homepage": "https://github.com/woodfishhhh/EZ_math_model#readme",
-  "entrypoint": "SKILL.md",
+  "entrypoint": "skills/ez-math-model/SKILL.md",
   "readme": {
-    "en": "README.md",
-    "zh-CN": "README.zh-CN.md"
+    "zh-CN": "README.md",
+    "en": "README.en.md"
   },
   "star_map": "STAR_MAP.md",
   "categories": [

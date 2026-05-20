@@ -6,7 +6,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch
 metadata:
   display_name: EZ Math Model
   type: workflow-skill
-  version: 0.1.0
+  version: 1.0.0
   author: woodfishhhh
   repository: https://github.com/woodfishhhh/EZ_math_model
   language_default: zh

@@ -1,21 +1,23 @@
 # Runtime workdirs
 workdir/
 *.workdir/
+skills/ez-math-model/workdir/
+skills/ez-math-model/*.workdir/
 
 # zhanwen/MathModel runtime fetch target (keep dir, ignore contents)
-external/zhanwen-mathmodel/*
-!external/zhanwen-mathmodel/.gitkeep
-!external/zhanwen-mathmodel/README.md
+skills/ez-math-model/external/zhanwen-mathmodel/*
+!skills/ez-math-model/external/zhanwen-mathmodel/.gitkeep
+!skills/ez-math-model/external/zhanwen-mathmodel/README.md
 
 # external tools decision markers (keep dir + readme + .gitkeep, ignore others)
-external/tools/*
-!external/tools/.gitkeep
-!external/tools/README.md
+skills/ez-math-model/external/tools/*
+!skills/ez-math-model/external/tools/.gitkeep
+!skills/ez-math-model/external/tools/README.md
 
 # user-supplied corpus (keep dir + readme + .gitkeep, ignore everything user drops in)
-external/user-corpus/*
-!external/user-corpus/.gitkeep
-!external/user-corpus/README.md
+skills/ez-math-model/external/user-corpus/*
+!skills/ez-math-model/external/user-corpus/.gitkeep
+!skills/ez-math-model/external/user-corpus/README.md
 
 # user-level secrets — never commit
 .env

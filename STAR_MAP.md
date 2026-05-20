@@ -1,10 +1,14 @@
 # EZ Math Model Star Map / 技能星图
 
-[English README](README.md) | [中文 README](README.zh-CN.md)
+[中文 README](README.md) | [English README](README.en.md)
 
 This map shows how the skill is organized for marketplace readers and future agents. Stars mark how central a module is to the modeling workflow.
 
 本星图用于展示 EZ Math Model 的能力分布和调用路径。星级表示该模块在主流程中的核心程度。
+
+All entries below are relative to `skills/ez-math-model/`.
+
+下列入口路径均相对 `skills/ez-math-model/`。
 
 ## Legend / 图例
 
@@ -88,4 +92,4 @@ flowchart LR
 
 ## Navigation Rule / 导航规则
 
-Start at `SKILL.md`. Load only the next pipeline file and the specific role/tool document needed by the current stage. The star map is for discovery and marketplace presentation, not a replacement for the pipeline contracts.
+Start at `skills/ez-math-model/SKILL.md`. Load only the next pipeline file and the specific role/tool document needed by the current stage. The star map is for discovery and marketplace presentation, not a replacement for the pipeline contracts.
