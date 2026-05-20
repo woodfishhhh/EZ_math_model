@@ -21,7 +21,7 @@
 | 03 coding | `src/`, `results/`, `figures/`, `execution_log.md` | `{stage_03_status}` |
 | 04 paper | `paper.md` | `{stage_04_status}` |
 | 05 quality | `quality_report.md` | `{stage_05_status}` |
-| 06 packaging | `paper.docx`, `deliverable.zip`, `diagnostics.md` | `{stage_06_status}` |
+| 06 packaging | `output/paper/*`, `output/manifest.json`, `output.zip`, `diagnostics.md` | `{stage_06_status}` |
 
 ## zhanwen 上游匹配
 
@@ -38,3 +38,4 @@
 3. `paper.md` 看最终论文。
 4. `quality_report.md` 看质量门哪些项未通过。
 5. `diagnostics.md` 看失败诊断。
+6. `project_paths.json` 看最终 `output/` 与 `output.zip` 的位置。

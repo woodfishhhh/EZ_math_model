@@ -2,19 +2,23 @@
 
 [中文说明](README.md) | [Skill Star Map](STAR_MAP.md) | [SkillsMP entry](https://skillsmp.com)
 
-EZ Math Model is a publish-ready Agent Skill for mathematical modeling contests. It turns a problem statement and attachments into a complete modeling workflow: intake, model selection, Python solving, figures, paper writing, quality audit, and packaged deliverables.
+EZ Math Model is a publish-ready Agent Skill for mathematical modeling contests. It turns a problem statement and attachments into a complete modeling workflow: setup authorization, intake, model selection, Python solving, figures, paper writing, quality audit, and standardized packaging.
 
 It is designed for CUMCM, MCM, ICM, graduate mathematical modeling contests, and course projects that look like contest-style modeling tasks.
 
 ## What It Does
 
 - Parses PDF, DOCX, Markdown, CSV, XLSX, and mixed attachments.
+- Creates the standard project layout: `用户输入/`, `runtime/`, and `output/`.
+- Enforces the first-run setup gate; permanent tool decisions are written only after user confirmation.
+- Explicitly separates `formal`, `demo`, and `blocked` runs, so missing required data cannot silently become synthetic formal results.
 - Detects contest signals such as contest, year, problem number, subtasks, data files, and output language.
 - Chooses models from a built-in algorithm library covering optimization, prediction, evaluation, graph theory, statistics, comprehensive modeling, and machine learning.
 - Writes and runs Python scripts, exports result tables, and generates figures.
+- Writes a chart manifest and filters all-zero, all-equal, or otherwise uninformative figures.
 - Drafts a modeling paper in Chinese or English from structured templates.
 - Runs quality gates before packaging.
-- Produces `paper.md`, optional `paper.docx`, `results/`, `figures/`, `src/`, `quality_report.md`, and `diagnostics.md`.
+- Produces `output/paper/paper.md`, `paper.docx`, `paper.txt`, `paper.pdf`, and packages the whole project folder as `output.zip`.
 
 ## SkillsMP-Ready Layout
 
@@ -61,19 +65,43 @@ Use ez-math-model to solve this mathematical modeling problem.
 
 Attach the problem statement and data files in the same turn.
 
+## Standard Usage
+
+1. Create a project root folder.
+2. Put the problem statement, requirements, notes, and data attachments into `用户输入/`.
+3. Open Codex / Claude Code in the project root and invoke ez-math-model.
+4. Complete setup on the first run. If temporary defaults are used, the final status is provisional.
+5. After the run, inspect `output/`; the deliverable is `output.zip` at the project root.
+
+Standard runtime layout:
+
+```text
+ProjectRoot/
+├── 用户输入/
+├── runtime/
+└── output/
+    ├── source code/
+    ├── paper/
+    │   ├── paper.md
+    │   ├── paper.docx
+    │   ├── paper.txt
+    │   └── paper.pdf
+    └── 附件文件夹/
+```
+
 ## Core Pipeline
 
 Paths in this section are relative to `skills/ez-math-model/`.
 
 | Stage | File | Output |
 |---|---|---|
-| 00 Environment | `pipeline/00-environment-setup.md` | environment check, tool decisions, workdir |
-| 01 Intake | `pipeline/01-problem-intake.md` | `problem.md`, `intake.json`, attachments preview |
+| 00 Setup + Environment | `pipeline/00-environment-setup.md` | setup status, `runtime/`, standard directories |
+| 01 Intake | `pipeline/01-problem-intake.md` | `problem.md`, `intake.json`, `run_state.json`, attachments preview |
 | 02 Modeling | `pipeline/02-modeling-plan.md` | `modeling_plan.md` |
-| 03 Solving | `pipeline/03-coding-solve.md` | `src/*.py`, `results/*`, `figures/*.png` |
+| 03 Solving | `pipeline/03-coding-solve.md` | `src/*.py`, `results/*`, `figures/*.png`, `chart_manifest.json` |
 | 04 Writing | `pipeline/04-paper-writing.md` | `paper.md` |
 | 05 Quality | `pipeline/05-quality-audit.md` | `quality_report.md` |
-| 06 Packaging | `pipeline/06-packaging-output.md` | DOCX/Markdown package and diagnostics |
+| 06 Packaging | `pipeline/06-packaging-output.md` | four paper formats, `output/manifest.json`, `output.zip` |
 
 ## Built-In Sub-Skills
 
@@ -94,13 +122,15 @@ See [STAR_MAP.md](STAR_MAP.md) for the full capability constellation.
 
 ## Runtime Policy
 
-The repository does not vendor upstream contest papers or user files. Runtime-only content is placed under `skills/ez-math-model/external/` and ignored by git:
+The repository does not vendor upstream contest papers or user files. Tool decisions and optional reference resources are placed under `skills/ez-math-model/external/` and ignored by git:
 
 - `skills/ez-math-model/external/zhanwen-mathmodel/` for optional upstream exemplar papers.
 - `skills/ez-math-model/external/user-corpus/` for user-provided references.
 - `skills/ez-math-model/external/tools/` for local tool decisions.
 
 Secrets use `EZMM_` environment variables and should live outside the repository.
+
+User project runtime files are written to the project root `runtime/` and `output/`, not to the skill installation directory.
 
 ## License
 

@@ -4,12 +4,13 @@
 
 - `paper.md` 已落盘。
 - `execution_log.md` 已落盘。
+- `run_state.json` 已落盘。
 
 ## 阶段任务
 
 按 `references/workdir-protocol.md` 的"quality_report.md 必备字段"逐项
 评估，输出 `quality_report.md`。本阶段同时**汇总 L3 影子评估**：读取
-`workdir/{task_id}/eval_shadow.md`（若存在），把每个角色的评分附在质量门
+`runtime/{task_id}/eval_shadow.md`（若存在），把每个角色的评分附在质量门
 末尾作为参考。
 
 **容错协议**：本阶段遵守 `references/fault-tolerance.md` 的全文。L4 反馈
@@ -25,13 +26,28 @@
 
 | # | 检查项 | 通过条件 | 判定 |
 |---|---|---|---|
-| 1 | 拆题完整 | `intake.json.ques_count > 0` 且每个 quesN 文本 ≥ 30 字 | 解析 intake.json |
-| 2 | 建模方案齐全 | `modeling_plan.md` 包含每个 quesN 的方案小节 | grep 章节标题 |
-| 3 | 代码可执行 | `execution_log.md` 中每个脚本最终状态 `ok` 占比 ≥ 50% | 解析 log 表格 |
-| 4 | 结果文件齐全 | `results/` 至少 1 个 csv 或 json | `Get-ChildItem` |
-| 5 | 图表齐全 | `figures/` 实际文件名集合 ⊇ `paper.md` 中的所有 `![]()` 引用 | 双向比对 |
-| 6 | 章节齐全 | `paper.md` 含 9 个固定章节标题 | grep 章节标题 |
-| 7 | 文献唯一 | `paper.md` 中每个 `[^N]` 编号不重复定义 | 正则统计 |
+| 1 | setup 完成 | `setup_status=user_confirmed` 才可正式通过；temporary/skipped 最高 provisional | 解析 run_state.json |
+| 2 | 运行模式合法 | `run_mode=formal/demo/blocked` 且 formal 时 `missing_inputs=[]` | 解析 run_state.json |
+| 3 | 拆题完整 | `intake.json.ques_count > 0` 且每个 quesN 文本 ≥ 30 字 | 解析 intake.json |
+| 4 | 建模方案齐全 | `modeling_plan.md` 包含每个 quesN 的方案小节 | grep 章节标题 |
+| 5 | 代码可执行 | `execution_log.md` 中每个脚本最终状态 `ok` 占比 ≥ 50% | 解析 log 表格 |
+| 6 | 结果文件有效 | `results/` 至少 1 个 csv/json，formal 结果不得含 `synthetic=true` | 扫描结果文件 |
+| 7 | 图表有效 | `chart_manifest.json` 存在；paper 只引用 `usable_in_paper=true` 图 | 解析 manifest |
+| 8 | 章节齐全 | formal 论文含 9 个固定章节标题；demo 必须标注非正式 | grep 章节标题 |
+| 9 | 文献唯一 | `paper.md` 中每个 `[^N]` 编号不重复定义 | 正则统计 |
+| 10 | 产物 manifest | 关键产物登记到 `artifact_manifest.json` 或准备由 packaging 写入 | 解析 manifest |
+
+### 图表质量硬门
+
+质量门必须读取 `figures/chart_manifest.json`。以下情况至少记为警告，formal 模式下
+记为失败：
+
+- `paper.md` 引用了 `usable_in_paper=false` 或未登记的图；
+- chart manifest 显示 `all_zero=true` 或 `all_equal=true` 的图仍作为柱状图进入论文；
+- `filtered_zero_rows > 0` 但没有说明过滤逻辑；
+- formal 论文引用 `synthetic=true` 图。
+
+质量审查不得只看“PNG 是否存在”。无信息图表比没有图更糟，必须剔除。
 
 ### quality_report.md 格式
 
@@ -40,19 +56,22 @@
 
 | # | 检查项 | 状态 | 详情 |
 |---|---|---|---|
-| 1 | 拆题完整 | ✓ | ques_count=3，每问 ≥ 30 字 |
-| 2 | 建模方案齐全 | ✓ | 已覆盖 q1/q2/q3 |
-| 3 | 代码可执行 | ⚠ | 4/5 子任务 ok，q2 失败 |
-| 4 | 结果文件齐全 | ✓ | 共 6 个结果文件 |
-| 5 | 图表齐全 | ⚠ | paper 引用 fig_q3_main.png 但 figures/ 缺失 |
-| 6 | 章节齐全 | ✓ | 9 章俱在 |
-| 7 | 文献唯一 | ✓ | 共 8 条文献，无重复 |
+| 1 | setup 完成 | ⚠ | setup_status=temporary_default，最高 provisional_pass |
+| 2 | 运行模式合法 | ✓ | run_mode=formal，missing_inputs=[] |
+| 3 | 拆题完整 | ✓ | ques_count=3，每问 ≥ 30 字 |
+| 4 | 建模方案齐全 | ✓ | 已覆盖 q1/q2/q3 |
+| 5 | 代码可执行 | ⚠ | 4/5 子任务 ok，q2 失败 |
+| 6 | 结果文件有效 | ✓ | 共 6 个结果文件，无 synthetic formal 结果 |
+| 7 | 图表有效 | ⚠ | 1 张图因全 0 被剔除，paper 未引用 |
+| 8 | 章节齐全 | ✓ | 9 章俱在 |
+| 9 | 文献唯一 | ✓ | 共 8 条文献，无重复 |
+| 10 | 产物 manifest | ✓ | packaging 前置登记完整 |
 
 ## 总体评估
 
-通过：5 / 7
-警告：2 / 7（不打断，packaging 阶段照常进行）
-失败：0 / 7
+通过：7 / 10
+警告：3 / 10（temporary setup 时只允许 provisional）
+失败：0 / 10
 
 ## 未通过项的影响
 
@@ -70,15 +89,17 @@
 
 | 路径 | 必须 | 说明 |
 |---|---|---|
-| `workdir/{task_id}/quality_report.md` | 是 | 质量审查结果 |
+| `runtime/{task_id}/quality_report.md` | 是 | 质量审查结果 |
 
 ## 失败诊断
 
 | 情况 | 处理 |
 |---|---|
-| 检查 1 失败 | **打断**，让用户确认 intake 阶段产出 |
-| 检查 6 失败 | **打断**，让用户决定是否打包不完整论文 |
-| 检查 7 失败 | 不打断，记入诊断；packaging 阶段会去重提示 |
+| `run_mode=blocked` | **打断**，不得 packaging，只输出诊断 |
+| formal 模式缺必需输入 | **打断**，让用户补齐附件或授权 demo |
+| setup 未确认 | 不打断，但最终等级最高 `provisional_pass` |
+| 章节齐全失败 | **打断**，让用户决定是否打包不完整论文 |
+| 文献唯一失败 | 不打断，记入诊断；packaging 阶段会去重提示 |
 | 其他检查警告 | 不打断 |
 
 ## 下一阶段入口

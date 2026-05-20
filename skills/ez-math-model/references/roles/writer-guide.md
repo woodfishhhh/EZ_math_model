@@ -27,19 +27,21 @@
 
 1. `templates/chapter_outline.toml`（章节字数 + 必备小节）
 2. `templates/paper_zh.md` 或 `paper_en.md`（兜底骨架）
-3. `workdir/{task_id}/intake.json`（题目 + 语言 + 赛事）
-4. `workdir/{task_id}/modeling_plan.md`（模型 + 公式 + 选择理由 + 参考来源）
-5. `workdir/{task_id}/execution_log.md`（哪些 quesN 完成了）
-6. `workdir/{task_id}/figures/`（图片**文件名清单**，不读图本身）
-7. `workdir/{task_id}/src/*.py` **末尾的 print 块**（数据特征 + 结果汇总，
+3. `runtime/{task_id}/run_state.json`（run_mode、formal_result、setup_status）
+4. `runtime/{task_id}/intake.json`（题目 + 语言 + 赛事）
+5. `runtime/{task_id}/modeling_plan.md`（模型 + 公式 + 选择理由 + 参考来源）
+6. `runtime/{task_id}/execution_log.md`（哪些 quesN 完成了）
+7. `runtime/{task_id}/figures/chart_manifest.json`（可入论文图表清单）
+8. `runtime/{task_id}/figures/`（图片**文件名清单**，不读图本身）
+9. `runtime/{task_id}/src/*.py` **末尾的 print 块**（数据特征 + 结果汇总，
    是论文数值的唯一权威来源）
-8. `workdir/{task_id}/results/*.csv` `*.json`（必要时复述具体数值）
-9. `workdir/{task_id}/thesis_match.json`（指向 zhanwen 优秀论文路径，仅作风格参考）
-10. `external/user-corpus/AGENTS.md`（用户钦定参考资料；引用候选）
+10. `runtime/{task_id}/results/*.csv` `*.json`（必要时复述具体数值）
+11. `runtime/{task_id}/thesis_match.json`（指向 zhanwen 优秀论文路径，仅作风格参考）
+12. `external/user-corpus/AGENTS.md`（用户钦定参考资料；引用候选）
 
 ## 必产出
 
-`workdir/{task_id}/paper.md`：
+`runtime/{task_id}/paper.md`：
 
 - 纯 markdown，**不**用 ```` ```markdown ```` 包裹。
 - 标题层级从 `#` 开始，依次嵌套到 `###`。
@@ -84,7 +86,7 @@ writer 只产出 `paper.md`，docx 转换由 pipeline 06 调 docx skill。
 1. 读 chapter_outline.toml，按目标字数估算每章篇幅
 2. 读 modeling_plan.md，记下每问的模型、公式、参数
 3. 读 execution_log.md，确认每问的状态（ok / failed / skipped）
-4. 列 figures/ 下的所有 png 文件名（这些必须全部出现在论文里）
+4. 读 chart_manifest.json，列出 `usable_in_paper=true` 的 png 文件名（这些必须全部出现在论文里）
 5. 读各 src/*.py 末尾的 print 块，把数值列成"数值清单"
 6. 选模板：
    - thesis_match.template_dir 非 INTERNAL → 优先用 zhanwen 模板
@@ -185,11 +187,12 @@ writer 只产出 `paper.md`，docx 转换由 pipeline 06 调 docx skill。
 
 ### 强制规则
 
-1. `figures/` 下每张 png 必须以 `![描述](文件名.png)` 出现至少一次。
+1. `chart_manifest.json` 中 `usable_in_paper=true` 的每张 png 必须以 `![描述](文件名.png)` 出现至少一次。
 2. 文件名**原样**使用，不改名（与 coder 落盘的命名一致）。
 3. 图片标签独占一行。
 4. 图片前 / 后至少 3 行文字解读。
 5. 解读数值都来自 coder 的 print 块。
+6. 未登记、`usable_in_paper=false`、`synthetic=true` 且 run_mode=formal 的图不得引用。
 
 ### 解读模板（按图型选）
 
@@ -214,6 +217,9 @@ writer 只产出 `paper.md`，docx 转换由 pipeline 06 调 docx skill。
 
 writer **只信 print 块**。如果 print 块没写某个数值（如残差 RMSE），论文
 里就**不写**那个数值。**禁止**编造或自行计算。
+
+writer 同时只信 `chart_manifest.json`。图文件存在但 manifest 标记不可用时，不能为了
+凑图引用它。
 
 ### 上游：modeler
 
@@ -263,6 +269,8 @@ pipeline 06 会调 docx skill 把 paper.md 转成 paper.docx。writer 不需要
 | 字数 < 10000 | 不打断；quality_audit 会标记 |
 | 检测到 bullet 列表 | 用上文正则扫 → 改写该段 → 重新检测 |
 | coder 失败的 quesN | 该 §5.X 章节仍要写，注明"由于代码执行失败，本节仅给出建模思路，数值结果待补" |
+| run_mode=demo | 全文显式标注“流程验证 / 非正式结果”，不得写正式结论 |
+| run_mode=blocked | 不生成 paper.md，只写诊断 |
 | L3 评分 < 阈值且 strict_quality | 进 L4 反馈重跑（最多 1 轮）|
 
 ## 常见错误对照
@@ -284,7 +292,8 @@ pipeline 06 会调 docx skill 把 paper.md 转成 paper.docx。writer 不需要
 - [ ] 9 章顺序 / 数量正确
 - [ ] 摘要 ≤ 1 页（600-700 字）+ 关键词 4-5 个
 - [ ] 每问 §5.X 含 5 段（分析 / 构建 / 求解 / 结果 / 分析）
-- [ ] figures/ 下所有图都被引 + ≥ 3 行解读
+- [ ] chart_manifest 中 usable 图都被引 + ≥ 3 行解读
+- [ ] 未引用 unusable / synthetic formal 冲突图
 - [ ] 数值都来自 print，无编造
 - [ ] `[^N]` 唯一、≥ 3 条
 - [ ] 公式块单独成段、参数有来源

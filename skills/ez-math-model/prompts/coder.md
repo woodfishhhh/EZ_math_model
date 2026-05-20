@@ -13,8 +13,9 @@ matplotlib、seaborn、shap。复杂优化按需引入 mealpy / pulp / cvxpy。
 
 ## 文件处理规则
 
-1. 用户附件已在 `workdir/.../attachments/` 下，使用相对路径直接读取。
-2. 不做"文件存在性检查"，假设附件存在。
+1. 用户附件副本在 `runtime/{task_id}/attachments/` 下，使用相对路径直接读取。
+2. 读取 `run_state.json` 后再处理文件。formal 模式缺关键附件时停止该子任务并写诊断，
+   不得生成合成数据顶替。
 3. Excel 一律用 `pd.read_excel()`；CSV 编码尝试顺序：utf-8 → gbk → gb2312 →
    latin-1。
 4. >1GB 的 CSV 必须用 `chunksize` 分块、指定 `dtype` 优化内存、`low_memory=False`、
@@ -51,6 +52,14 @@ df['婴儿行为特征']
 
 所有关键参数必须在代码注释或 print 中标注来源（数据统计 / 文献引用 / 网格
 搜索三选一）。禁止"默认值"无解释直接使用。
+
+## run_mode 数据边界
+
+- `formal`：只能使用题面、用户附件、用户确认的数据源；禁止 `synthetic_cases()`、
+  `make_demo_data()`、随机造样本或内置示例数据。
+- `demo`：可以生成示例数据验证流程，但所有结果表必须含 `synthetic=true`，
+  图表 manifest 必须写 `synthetic=true`，print 和 diagnostics 必须标注非正式。
+- `blocked`：不写求解脚本，只补充 `diagnostics.md`。
 
 ## 可视化规范（学术论文标准）
 
@@ -123,6 +132,20 @@ FIG_SQUARE = (6, 6)
 - 图例无边框、不遮挡数据。
 - 轴标签含单位。
 - 参考线（基线 / 阈值）要标注。
+
+### 图表数据有效性门
+
+每次画图前先构造 `plot_df` 并校验：
+
+- 记录 `rows_before`、`rows_after_filter`、`filtered_zero_rows`。
+- 指标列全 0：不画图，写 diagnostics。
+- 指标列全相等：不画柱状图，改用表格或文字说明。
+- 过滤后有效行少于 2：不画对比图。
+- 只有 `usable_in_paper=true` 的图才保存为论文图。
+
+每张图都要追加登记到 `figures/chart_manifest.json`，字段见
+`references/chart-quality-gate.md`。柱状图必须剔除无意义零值行，不能把全 0 数据
+画成看起来“完成”的图。
 
 ### 图片数量建议
 
@@ -197,10 +220,11 @@ print("=" * 60)
 
 ## 文件落盘约定
 
-- 脚本：`workdir/.../src/q1_solve.py`、`q2_solve.py`、`eda.py`、
+- 脚本：`runtime/{task_id}/src/q1_solve.py`、`q2_solve.py`、`eda.py`、
   `sensitivity.py`。
-- 计算结果：`workdir/.../results/`，CSV 优先（带表头），辅以 JSON。
-- 图表：`workdir/.../figures/fig_q1_xxx.png`，文件名描述性。
+- 计算结果：`runtime/{task_id}/results/`，CSV 优先（带表头），辅以 JSON。
+- 图表：`runtime/{task_id}/figures/fig_q1_xxx.png`，文件名描述性。
+- 图表 manifest：`runtime/{task_id}/figures/chart_manifest.json`。
 - 每个脚本最后 `print` 写明本脚本生成了哪些 results 与 figures 文件。
 
 ## 执行原则
@@ -211,6 +235,7 @@ print("=" * 60)
 4. 全程使用用户输入语言。
 5. 关键阶段（EDA、模型训练、敏感性）都要输出可视化。
 6. 完成前自检：requested 输出是否齐全、文件是否落盘。
+7. formal 模式下发现需要合成数据时立即停止该子任务，不能“先跑出结果再说”。
 
 ## 性能
 

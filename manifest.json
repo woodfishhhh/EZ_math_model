@@ -1,7 +1,7 @@
 {
   "name": "ez-math-model",
   "display_name": "EZ Math Model",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "数学建模一站式 skill：拆题、建模、求解、出图、写论文、质量门、打包。",
   "license": "MIT",
   "author": {
@@ -48,7 +48,12 @@
     "workdir_readme": "skills/ez-math-model/templates/readme_workdir.md"
   },
   "references": {
+    "project_root_protocol": "skills/ez-math-model/references/project-root-protocol.md",
+    "setup_policy": "skills/ez-math-model/references/setup-policy.md",
+    "run_mode_protocol": "skills/ez-math-model/references/run-mode-protocol.md",
     "workdir_protocol": "skills/ez-math-model/references/workdir-protocol.md",
+    "chart_quality_gate": "skills/ez-math-model/references/chart-quality-gate.md",
+    "artifact_manifest": "skills/ez-math-model/references/artifact-manifest.md",
     "algorithms_index": "skills/ez-math-model/references/algorithms/README.md",
     "external_tools_catalog": "skills/ez-math-model/references/external-tools-catalog.md",
     "fault_tolerance": "skills/ez-math-model/references/fault-tolerance.md",
@@ -89,6 +94,7 @@
     },
     "runtime": {
       "init_workdir_ps1": "skills/ez-math-model/scripts/runtime/init_workdir.ps1",
+      "export_paper_ps1": "skills/ez-math-model/scripts/runtime/export_paper.ps1",
       "match_thesis_py": "skills/ez-math-model/scripts/runtime/match_thesis.py",
       "pack_deliverable_ps1": "skills/ez-math-model/scripts/runtime/pack_deliverable.ps1"
     }

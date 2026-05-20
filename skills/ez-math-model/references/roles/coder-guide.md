@@ -22,10 +22,11 @@
 
 ## 必读输入
 
-1. `workdir/{task_id}/intake.json`（题目语义层）
-2. `workdir/{task_id}/modeling_plan.md`（**唯一**权威的方案输入）
-3. `workdir/{task_id}/env_check.json`（看哪些库缺失，决定是否走 L2 降级）
-4. `workdir/{task_id}/attachments/`（附件原件 + preview）
+1. `runtime/{task_id}/run_state.json`（run_mode、formal_result、missing_inputs）
+2. `runtime/{task_id}/intake.json`（题目语义层）
+3. `runtime/{task_id}/modeling_plan.md`（**唯一**权威的方案输入）
+4. `runtime/{task_id}/env_check.json`（看哪些库缺失，决定是否走 L2 降级）
+5. `runtime/{task_id}/attachments/`（附件原件副本 + preview）
 5. `prompts/coder.md` + `prompts/shared.md`
 6. `references/fault-tolerance.md` 的 L1 / L2 段
 
@@ -36,12 +37,13 @@ pipeline 02 让 modeler 补写，**不要**自己回去读题目。
 
 | 类别 | 路径 | 必须 |
 |---|---|---|
-| 脚本 | `workdir/{task_id}/src/{eda,q1,q2,...,sensitivity}.py` | 是 |
-| 结果 | `workdir/{task_id}/results/*.csv` 或 `*.json` | 是 |
-| 图表 | `workdir/{task_id}/figures/fig_*.png` 300dpi | 是 |
-| 日志 | `workdir/{task_id}/execution_log.md` | 是 |
-| 诊断 | `workdir/{task_id}/diagnostics.md` | 仅失败时 |
-| 影子评分 | `workdir/{task_id}/eval_shadow.md` | 由 L3 evaluator 写 |
+| 脚本 | `runtime/{task_id}/src/{eda,q1,q2,...,sensitivity}.py` | 是 |
+| 结果 | `runtime/{task_id}/results/*.csv` 或 `*.json` | 是 |
+| 图表 | `runtime/{task_id}/figures/fig_*.png` 300dpi | 是 |
+| 图表清单 | `runtime/{task_id}/figures/chart_manifest.json` | 是 |
+| 日志 | `runtime/{task_id}/execution_log.md` | 是 |
+| 诊断 | `runtime/{task_id}/diagnostics.md` | 仅失败时 |
+| 影子评分 | `runtime/{task_id}/eval_shadow.md` | 由 L3 evaluator 写 |
 
 ## 子工具调用法
 
@@ -74,6 +76,9 @@ df.to_csv("results/q1_summary.csv", index=False, encoding="utf-8")
 ## 标准工作流（7 步）
 
 ### Step 1 — 拆任务
+
+先读 `run_state.json`。`run_mode=blocked` 时停止；`run_mode=formal` 时禁止合成数据；
+`run_mode=demo` 时所有结果必须标记 `synthetic=true`。
 
 按 modeling_plan.md 的小节切：
 
@@ -130,6 +135,9 @@ print(f"几何关系验证：tan(α) = {np.tan(alpha):.4f} vs 题目要求 {H/L:
 - 模型超参写在脚本顶部 `PARAMS = {...}` 块，便于 sensitivity 阶段重用。
 - 时序数据：必须用 `TimeSeriesSplit` 或手动按时间切，禁止 `shuffle=True`。
 - 标准化 / 编码：仅在训练集 fit。
+- formal 模式下附件缺失或字段缺失时写诊断并停止该子任务，不得生成 demo 数据。
+- 每张图保存前按 `references/chart-quality-gate.md` 写入 chart manifest；全 0 或全相等
+  图不得标为 `usable_in_paper=true`。
 
 ### Step 5 — 优化类问题特殊段
 
@@ -221,6 +229,9 @@ writer 通过三个文本通道读取本阶段产出：
 - [ ] 退出码 = 0
 - [ ] results 文件已落盘（≥ 1 个 csv 或 json）
 - [ ] figures 文件已落盘（数量符合 modeling_plan §1.5 的可视化方案）
+- [ ] `figures/chart_manifest.json` 已登记每张图
+- [ ] 无 all-zero/all-equal 图进入 paper 可用集合
+- [ ] formal 模式无 `synthetic=true` 结果
 - [ ] **每张图都有对应 print 的数据特征块**（critical）
 - [ ] 末尾有"结果汇总"print 块
 - [ ] 全局样式已应用（无 ax.set_title / 无饼图 / 无 3D）
@@ -236,6 +247,8 @@ writer 通过三个文本通道读取本阶段产出：
 | `train_test_split(X, y, shuffle=True)` 时序数据 | `TimeSeriesSplit` 或手动按时间切 |
 | `sns.histplot(physical_constants)` | 物理常量不做描述性统计 |
 | 图后只写 `plt.savefig` 不 print | savefig 后紧跟 print 数据特征块 |
+| 缺附件就调用 `synthetic_cases()` | formal 模式停止并写诊断；只有 demo 可合成 |
+| 全 0 数据也画柱状图 | 过滤零值或改文字说明，并在 chart manifest 标记不可入论文 |
 | `try: ... except: pass` 吞异常 | except 后写 diagnostics 并明确退出 |
 | 优化变量无上下界 | bounds=[(min1,max1), (min2,max2)] 必填 |
 | `ax.set_title("标题")` | 论文 caption 给标题，代码里 ax 不写 title |

@@ -23,10 +23,11 @@
 
 ## 必读输入（按顺序）
 
-1. `workdir/{task_id}/intake.json`（题目语义层 — 必读）
-2. `workdir/{task_id}/problem.md`（题目原文 — 备查，遇到 intake 信息不全时翻原文）
-3. `workdir/{task_id}/attachments/`（附件清单与 preview）
-4. `workdir/{task_id}/thesis_match.json`（上游优秀论文匹配）
+1. `runtime/{task_id}/run_state.json`（run_mode 与缺失输入）
+2. `runtime/{task_id}/intake.json`（题目语义层 — 必读）
+3. `runtime/{task_id}/problem.md`（题目原文 — 备查，遇到 intake 信息不全时翻原文）
+4. `runtime/{task_id}/attachments/`（附件清单与 preview）
+5. `runtime/{task_id}/thesis_match.json`（上游优秀论文匹配）
 5. `references/algorithms/README.md` 速查表
 6. **与本题最相关的 1-2 个算法库子文档**（按速查表的"问题类型 → 文档"列）
 7. `external/user-corpus/AGENTS.md`（若存在；重点读"Recommendations for this task"）
@@ -66,10 +67,12 @@
 
 ### Step 0 — 附件检查（必须最先执行）
 
-读 `intake.json.attachments`：
+先读 `run_state.json` 与 `intake.json.attachments`：
 - 是否含 csv / xlsx / json 等数据文件 → 数据驱动题路径。
 - 是否仅含 pdf / docx 题面、无数据 → 物理 / 逻辑题路径。
 - 是否完全无附件 → 建模题但需自行查找数据，可建议用户启用 dataset skill。
+- 若 `run_mode=blocked`，停止并让用户补齐输入；不得把缺附件问题交给 coder 造数。
+- 若 `run_mode=demo`，方案需标注合成数据只用于流程验证。
 
 ### Step 1 — 题目类型判断
 
@@ -205,6 +208,7 @@ paper-search skill 全部源都返回空
 | EDA 对物理常量做"异常值清洗" | 物理机理题不做描述性统计，改写量纲验证 + 物理一致性检查 |
 | 公式不写参数来源 | $c_i$ 由数据均值估计（来源：附件 data.csv 第 3 列）|
 | 直接告诉 coder"用 sklearn 跑" | 说明算法步骤、关键超参、验证指标，不给具体 import 语句 |
+| formal 缺附件仍让 coder 兜底 | 转为 blocked，写明缺失输入 |
 
 ## 自检清单（落盘前必跑）
 

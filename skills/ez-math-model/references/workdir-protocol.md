@@ -1,49 +1,86 @@
-# 工作目录协议
+# Runtime Workdir Protocol
 
-每次运行 ez-math-model 都会创建一个独立工作目录，所有阶段产物都落在
-其中。失败定位、断点重试、最终打包都依赖此协议。
+ez-math-model 面向“项目总文件夹”运行。新版本把旧 `workdir/{task_id}` 收敛为
+`runtime/{task_id}`：runtime 只放中间产物，最终交付统一同步到 `output/`。
 
 ## 目录命名
 
-```
-workdir/{YYYYMMDD-HHMMSS}-{8位 hex hash}/
+```text
+runtime/{YYYYMMDD-HHMMSS}-{8位 hex hash}/
 ```
 
 - 时间戳精确到秒，避免同分钟内多次运行冲突。
-- hash 用任务标题 + 当前时间戳的 sha1 前 8 位，便于人快速区分多个任务。
-- 目录创建脚本：`scripts/runtime/init_workdir.ps1`（POSIX 用 sh 等价版）。
+- hash 用任务标题 + 当前时间戳的 sha1 前 8 位。
+- 创建脚本：`scripts/runtime/init_workdir.ps1 -ProjectRoot <项目总文件夹>`。
+- 旧版 `workdir/{task_id}` 仅作为兼容别名，不再作为新运行的默认目录。
 
-## 目录结构
+## 标准 runtime 结构
 
+```text
+runtime/{task_id}/
+├── README.md
+├── project_paths.json          # 项目总文件夹、用户输入、runtime、output 映射
+├── run_state.json              # setup_status、run_mode、formal_result、missing_inputs
+├── setup_assumptions.json      # 仅 temporary_default 时存在
+├── env_check.json
+├── tools_status.json
+├── problem.md
+├── intake.json
+├── attachments/                # 从 用户输入/ 复制来的原始附件副本
+├── modeling_plan.md
+├── thesis_match.json
+├── src/
+├── results/
+├── figures/
+│   └── chart_manifest.json
+├── execution_log.md
+├── paper.md
+├── quality_report.md
+├── diagnostics.md
+├── artifact_manifest.json
+├── logs/
+├── tmp/
+└── deliverable.zip             # output.zip 的兼容副本，可选
 ```
-workdir/{name}/
-├── README.md                # 本任务的元信息（来自 templates/readme_workdir.md）
-├── problem.md               # intake 阶段：题目原文（清洗后的 markdown）
-├── intake.json              # intake 阶段：拆题结构化结果（schema 见下文）
-├── attachments/             # intake 阶段：用户上传的所有附件原件
-│   ├── data.csv
-│   └── ...
-├── modeling_plan.md         # modeling 阶段：建模方案
-├── thesis_match.json        # modeling 阶段：上游优秀论文匹配结果
-├── src/                     # coding 阶段：所有可运行脚本
-│   ├── eda.py
-│   ├── q1_solve.py
-│   ├── q2_solve.py
-│   └── sensitivity.py
-├── results/                 # coding 阶段：计算结果
-│   ├── q1_summary.csv
-│   ├── q2_predictions.csv
-│   └── sensitivity.json
-├── figures/                 # coding 阶段：所有图表（PNG，300dpi）
-│   ├── fig_eda_corr.png
-│   ├── fig_q1_fit.png
-│   └── ...
-├── execution_log.md         # coding 阶段：每次脚本运行的命令、stdout 摘要、状态
-├── paper.md                 # writer 阶段：论文 markdown
-├── paper.docx               # packaging 阶段：通过 docx skill 转换的 docx
-├── quality_report.md        # quality 阶段：质量门评分与未通过项
-├── diagnostics.md           # 任意阶段：失败诊断（无失败时也要存空报告）
-└── deliverable.zip          # packaging 阶段：最终交付包
+
+## 标准 output 结构
+
+```text
+output/
+├── source code/
+│   └── src/
+├── paper/
+│   ├── paper.md
+│   ├── paper.docx
+│   ├── paper.txt
+│   └── paper.pdf
+├── 附件文件夹/
+│   ├── figures/
+│   ├── results/
+│   ├── attachments/
+│   ├── 质量检查报告.md
+│   ├── 失败诊断.md
+│   └── run_state.json
+└── manifest.json
+```
+
+项目总文件夹根目录最终还必须有 `output.zip`，内容为项目总文件夹内全部内容
+（排除 `output.zip` 自身）。
+
+## run_state.json schema
+
+```json
+{
+  "task_id": "...",
+  "run_mode": "formal | demo | blocked",
+  "formal_result": true,
+  "setup_status": "user_confirmed | temporary_default | skipped | incomplete",
+  "required_inputs": [],
+  "missing_inputs": [],
+  "can_generate_paper": true,
+  "can_package": true,
+  "created_at": "..."
+}
 ```
 
 ## intake.json schema
@@ -61,6 +98,7 @@ workdir/{name}/
   "year": 2024,
   "problem_letter": "B",
   "attachments": [{"name": "data.csv", "kind": "csv", "note": "..."}],
+  "required_inputs": [{"name": "graph data files", "reason": "题面要求附件图数据"}],
   "language": "zh"
 }
 ```
@@ -79,27 +117,22 @@ workdir/{name}/
 }
 ```
 
-`match_level` 取值约定：
-
-- `exact` ：(赛事, 年份, 题号) 全命中。
-- `year` ：(赛事, 年份) 命中，题号未命中或题号不存在子目录。
-- `series` ：仅赛事命中，回落到该赛事下最新可用年份。
-- `fallback` ：赛事未识别，回落到 `2024年数模悉知&论文模版` + `数学建模Latex模版`。
-- `internal` ：zhanwen 仓库未下载或目标路径不存在，使用仓库内置 markdown 模板。
-
 ## quality_report.md 必备字段
 
-固定 7 项检查（细节见 `pipeline/05-quality-audit.md`）：
+固定 10 项检查（细节见 `pipeline/05-quality-audit.md`）：
 
 | 检查项 | 通过条件 |
 |---|---|
+| setup 完成 | `setup_status=user_confirmed` 才可正式通过 |
+| 运行模式合法 | `run_mode` 为 formal/demo/blocked，formal 不缺关键输入 |
 | 拆题完整 | `intake.json.ques_count > 0` 且每个 quesN 文本 ≥ 30 字 |
 | 建模方案齐全 | `modeling_plan.md` 包含每个 quesN 的方案小节 |
-| 代码可执行 | `execution_log.md` 中每个脚本的最终状态为 `ok` |
-| 结果文件齐全 | `results/` 至少有 1 个 CSV 或 JSON |
-| 图表齐全 | `figures/` 与 `paper.md` 中 `![]()` 引用一致 |
-| 章节齐全 | `paper.md` 含摘要、问题重述、问题分析、模型假设、符号说明、模型建立与求解、敏感性、模型评价、参考文献 |
-| 文献唯一 | `paper.md` 中 `[^N]` 编号无重复 |
+| 代码可执行 | `execution_log.md` 中脚本最终状态 `ok` 占比 ≥ 50% |
+| 结果文件有效 | `results/` 至少有 1 个 CSV 或 JSON，formal 结果无 `synthetic=true` |
+| 图表有效 | `chart_manifest.json` 存在，paper 只引用 `usable_in_paper=true` 图 |
+| 章节齐全 | formal 论文含摘要、问题重述、问题分析、模型假设、符号说明、模型建立与求解、敏感性、模型评价、参考文献 |
+| 文献唯一 | `paper.md` 中 `[^N]` 编号无重复定义 |
+| 产物 manifest | 必登产物存在、类型正确、formal 标记与 run_mode 一致 |
 
 ## diagnostics.md
 
@@ -121,19 +154,19 @@ workdir/{name}/
 - 时间：2026-05-19T11:02:13+08:00
 - 错误摘要：[一行]
 - 已尝试：[简述重试逻辑]
-- 影响：q2 的 figures/fig_q2_xxx.png 缺失
-- 用户建议动作：检查附件 data.csv 编码 / 安装 xgboost / ...
+- 影响：q2 的结果不可作为正式结论
+- 用户建议动作：补充附件 data.csv / 安装 xgboost / 授权 demo ...
 ```
 
 ## 路径安全
 
-- 工作目录路径不得包含上级跳转（`..`）。
-- 附件名落盘前由 `init_workdir` 脚本做基本清洗（去掉路径分隔符与控制字符）。
-- 所有相对路径以工作目录为根。
+- runtime 路径不得包含上级跳转（`..`）。
+- `用户输入/` 只读，所有处理都在 `runtime/{task_id}/attachments/` 副本上进行。
+- 所有相对路径以 `runtime/{task_id}` 为根。
+- 禁止把 runtime 创建在 skill 安装目录；默认应位于项目总文件夹下。
 
 ## 重试与续跑
 
 - 每个 pipeline 阶段开始时检查自身入口条件文件是否齐全，缺失直接打断。
-- 若用户希望从中间阶段重跑，可手动复制工作目录后从对应阶段启动；ez-math-model
-  默认每次都新建工作目录，不在原目录覆盖。
-
+- 若用户希望从中间阶段重跑，可复制对应 `runtime/{task_id}` 后从该阶段启动。
+- packaging 阶段必须重新同步 `output/`，不能只复用旧 `deliverable.zip`。

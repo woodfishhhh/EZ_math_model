@@ -1,6 +1,10 @@
 [CmdletBinding()]
 param(
-  [string]$WorkdirRoot = (Join-Path $PSScriptRoot '..\..\workdir'),
+  [string]$ProjectRoot = (Get-Location).Path,
+  [string]$InputRoot,
+  [string]$RuntimeRoot,
+  [string]$OutputRoot,
+  [string]$WorkdirRoot,
   [string]$Title = 'untitled',
   [string]$Language = 'zh',
   [string]$Contest = 'unknown',
@@ -10,8 +14,22 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-if (-not (Test-Path $WorkdirRoot)) {
-  New-Item -ItemType Directory -Force -Path $WorkdirRoot | Out-Null
+$projectPath = (Resolve-Path -LiteralPath $ProjectRoot).Path
+$userInputDirName = -join ([char[]](0x7528,0x6237,0x8F93,0x5165))
+$attachmentFolderName = -join ([char[]](0x9644,0x4EF6,0x6587,0x4EF6,0x5939))
+if (-not $InputRoot) { $InputRoot = Join-Path $projectPath $userInputDirName }
+if (-not $RuntimeRoot) { $RuntimeRoot = Join-Path $projectPath 'runtime' }
+if (-not $OutputRoot) { $OutputRoot = Join-Path $projectPath 'output' }
+if (-not $WorkdirRoot) { $WorkdirRoot = $RuntimeRoot }
+
+$sourceOutput = Join-Path $OutputRoot 'source code'
+$paperOutput = Join-Path $OutputRoot 'paper'
+$attachmentsOutput = Join-Path $OutputRoot $attachmentFolderName
+
+foreach ($dir in @($InputRoot, $RuntimeRoot, $OutputRoot, $sourceOutput, $paperOutput, $attachmentsOutput)) {
+  if (-not (Test-Path $dir)) {
+    New-Item -ItemType Directory -Force -Path $dir | Out-Null
+  }
 }
 
 $ts = Get-Date -Format 'yyyyMMdd-HHmmss'
@@ -24,7 +42,7 @@ $shortHash = $hash.Substring(0,8)
 $taskId = "$ts-$shortHash"
 $taskDir = Join-Path $WorkdirRoot $taskId
 
-foreach ($sub in @('attachments','src','results','figures')) {
+foreach ($sub in @('attachments','src','results','figures','logs','tmp')) {
   New-Item -ItemType Directory -Force -Path (Join-Path $taskDir $sub) | Out-Null
 }
 
@@ -56,7 +74,39 @@ foreach ($kv in $replacements.GetEnumerator()) {
 }
 Set-Content -LiteralPath (Join-Path $taskDir 'README.md') -Value $readme -Encoding UTF8
 
+$projectPaths = [ordered]@{
+  project_root       = $projectPath
+  input_root         = (Resolve-Path -LiteralPath $InputRoot).Path
+  runtime_root       = (Resolve-Path -LiteralPath $RuntimeRoot).Path
+  task_dir           = (Resolve-Path -LiteralPath $taskDir).Path
+  output_root        = (Resolve-Path -LiteralPath $OutputRoot).Path
+  source_output      = (Resolve-Path -LiteralPath $sourceOutput).Path
+  paper_output       = (Resolve-Path -LiteralPath $paperOutput).Path
+  attachments_output = (Resolve-Path -LiteralPath $attachmentsOutput).Path
+}
+$projectPaths | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $taskDir 'project_paths.json') -Encoding UTF8
+
+$runState = [ordered]@{
+  task_id        = $taskId
+  run_mode       = 'blocked'
+  formal_result  = $false
+  setup_status   = 'incomplete'
+  required_inputs = @()
+  missing_inputs = @()
+  can_generate_paper = $false
+  can_package = $false
+  created_at = (Get-Date -Format 'o')
+}
+$runState | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $taskDir 'run_state.json') -Encoding UTF8
+
 [pscustomobject]@{
-  task_id  = $taskId
-  task_dir = (Resolve-Path -LiteralPath $taskDir).Path
+  task_id            = $taskId
+  task_dir           = (Resolve-Path -LiteralPath $taskDir).Path
+  project_root       = $projectPath
+  input_root         = (Resolve-Path -LiteralPath $InputRoot).Path
+  runtime_root       = (Resolve-Path -LiteralPath $RuntimeRoot).Path
+  output_root        = (Resolve-Path -LiteralPath $OutputRoot).Path
+  source_output      = (Resolve-Path -LiteralPath $sourceOutput).Path
+  paper_output       = (Resolve-Path -LiteralPath $paperOutput).Path
+  attachments_output = (Resolve-Path -LiteralPath $attachmentsOutput).Path
 } | ConvertTo-Json -Compress

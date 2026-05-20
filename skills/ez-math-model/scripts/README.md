@@ -28,9 +28,10 @@ LLM 不直接执行 git / 文件系统重活。
 
 | 脚本 | 平台 | 用途 | 输入 | 输出 |
 |---|---|---|---|---|
-| `init_workdir.ps1` | Windows | 创建 `workdir/{YYYYMMDD-HHMMSS}-{8位hash}/` 骨架并渲染 README | `-Title -Language -Contest -Year -ProblemLetter` | stdout JSON `{task_id, task_dir}` |
+| `init_workdir.ps1` | Windows | 创建 `runtime/{YYYYMMDD-HHMMSS}-{8位hash}/` 骨架、标准 `用户输入/runtime/output` 目录并渲染 README | `-ProjectRoot -Title -Language -Contest -Year -ProblemLetter` | stdout JSON `{task_id, task_dir, output_root}` |
 | `match_thesis.py` | 任意 Python | 题目纯文本 → 上游优秀论文路径匹配 | stdin 或 `--problem-text`，`--root` 指定仓库根 | stdout JSON（schema 见 `references/workdir-protocol.md`） |
-| `pack_deliverable.ps1` | Windows | 把 workdir 打包为 `deliverable.zip`，文件名走中文 | `-WorkDir <path>` | stdout 输出 zip 路径 |
+| `export_paper.ps1` | Windows | 把 `paper.md` 导出到 `output/paper/paper.md|docx|txt|pdf` | `-WorkDir <runtime task dir>` | stdout JSON 导出状态 |
+| `pack_deliverable.ps1` | Windows | 同步 runtime 产物到 `output/` 并生成项目根目录 `output.zip` | `-WorkDir <runtime task dir>` | stdout 输出 zip 路径 |
 
 ### match_thesis.py 测试样例
 
@@ -47,7 +48,7 @@ LLM 不直接执行 git / 文件系统重活。
 
 ## POSIX 等价脚本
 
-`init_workdir.ps1` / `pack_deliverable.ps1` / `verify_environment.ps1` 当前
+`init_workdir.ps1` / `export_paper.ps1` / `pack_deliverable.ps1` / `verify_environment.ps1` 当前
 仅给 Windows 版。POSIX 用户可手动用 `bash` + `python` 实现等价效果，未来按
 需补 `.sh` 版本（不影响现版功能）。
 

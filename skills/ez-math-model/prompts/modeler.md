@@ -126,6 +126,7 @@
 ## 输出格式
 
 输出 markdown 文档（落盘为 `workdir/.../modeling_plan.md`），结构如下：
+新运行实际路径为 `runtime/{task_id}/modeling_plan.md`；`workdir/...` 仅为旧版别名。
 
 ```markdown
 # 建模方案
@@ -160,3 +161,4 @@
 - 不写可运行代码。
 - 不下最终结论（结论由 coder 跑出来后由 writer 总结）。
 - 不评价题目本身的难易。
+- 不要求 coder 在缺失关键附件时自行造数据；formal 模式缺输入必须转为 blocked。

@@ -6,7 +6,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch
 metadata:
   display_name: EZ Math Model
   type: workflow-skill
-  version: 1.0.1
+  version: 1.1.0
   author: woodfishhhh
   repository: https://github.com/woodfishhhh/EZ_math_model
   language_default: zh
@@ -22,22 +22,29 @@ read_when:
 
 # ez-math-model
 
-数学建模一站式 skill。把题目交给我，我会自动走完七个阶段：环境检查 → 题目解析 →
-建模方案 → 代码求解 → 论文撰写 → 质量审查 → 打包交付。首次使用必须完成 setup
-提问；完成后写入 `external/tools/setup_state.json`，后续默认跳过交互式 setup。
+数学建模一站式 skill。把题目交给我，我会自动走完七个阶段：setup → 题目解析 →
+建模方案 → 代码求解 → 论文撰写 → 质量审查 → 标准打包交付。首次使用必须完成 setup
+提问；完成后写入 `external/tools/setup_state.json`。未经用户确认，只能使用本次临时默认，
+不得写永久配置。
 
 ## 一句话主流程
 
-> 收到题目 → 检查 `external/tools/setup_state.json` → 未完成则强制 setup 提问并落状态 →
-> 创建工作目录 → 识别赛事/年份/题号 → 选择模型 → 写脚本并执行 → 出图 → 写论文 →
-> 跑质量门 → 打包 `论文.docx + 论文.md + results/ + figures/ + src/ + 质量检查报告.md + 失败诊断.md`。
+> 收到题目 → 识别项目总文件夹 → 检查 `external/tools/setup_state.json` →
+> 创建 `用户输入/runtime/output` 标准目录 → 判定 `formal/demo/blocked` →
+> 识别赛事/年份/题号 → 选择模型 → 写脚本并执行 → 出图并过 chart gate →
+> 写论文 → 跑质量门 → 同步到 `output/` 并打包 `output.zip`。
 
 ## 触发后的第一动作
 
-先读以下两份文件确认本次运行的契约：
+先读以下七份文件确认本次运行的契约：
 
 1. `pipeline/00-environment-setup.md` — 验环境（Python、字体、工作目录、上游缓存状态）
-2. `references/workdir-protocol.md` — 工作目录的产物结构与命名
+2. `references/project-root-protocol.md` — 项目总文件夹与 `用户输入/runtime/output`
+3. `references/setup-policy.md` — setup 硬门与临时默认边界
+4. `references/run-mode-protocol.md` — `formal/demo/blocked` 判定
+5. `references/workdir-protocol.md` — runtime 产物结构与命名
+6. `references/chart-quality-gate.md` — 图表有效性门
+7. `references/artifact-manifest.md` — 产物 manifest 契约
 
 然后立刻执行 setup gate：
 
@@ -49,19 +56,21 @@ read_when:
 - 若 `setup_completed: true`，默认跳过交互式 setup，只做本次任务所需的轻量环境检查
   和工作目录创建。
 
-不要用"默认不追问"绕过首次 setup；首次 setup 是硬门禁。
+不要用"默认不追问"绕过首次 setup；首次 setup 是硬门禁。若用户要求继续但无法
+完成交互式 setup，只能写 `runtime/{task_id}/setup_assumptions.json`，并把
+`setup_status` 标为 `temporary_default`，最终质量等级最高为 `provisional_pass`。
 
 ## Pipeline 索引
 
 | # | 文件 | 入口条件 | 关键产出 |
 |---|---|---|---|
-| 00 | `pipeline/00-environment-setup.md` | 用户给出题目或附件；setup gate 未完成时必须先问 | `setup_state.json` 完成、`workdir/` 创建完成、env-check 通过 |
-| 01 | `pipeline/01-problem-intake.md` | env-check 通过 | `workdir/.../problem.md`、`intake.json`、`attachments/` |
+| 00 | `pipeline/00-environment-setup.md` | 用户给出题目或附件；setup gate 未完成时必须先问 | setup 状态明确、`runtime/` 创建完成、env-check 通过 |
+| 01 | `pipeline/01-problem-intake.md` | env-check 通过 | `runtime/.../problem.md`、`intake.json`、`attachments/`、`run_state.json` |
 | 02 | `pipeline/02-modeling-plan.md` | intake 完成 | `modeling_plan.md`、（首次询问 zhanwen 拉取） |
 | 03 | `pipeline/03-coding-solve.md` | modeling_plan 落盘 | `src/*.py`、`results/*`、`figures/*.png` |
 | 04 | `pipeline/04-paper-writing.md` | coding 完成 | `paper.md` |
 | 05 | `pipeline/05-quality-audit.md` | paper.md 落盘 | `quality_report.md`（含未通过项） |
-| 06 | `pipeline/06-packaging-output.md` | 质量门评估完成 | `paper.docx`、`diagnostics.md`、最终交付 zip |
+| 06 | `pipeline/06-packaging-output.md` | 质量门评估完成 | `output/paper/*` 四格式、`output/manifest.json`、`output.zip` |
 
 ## 角色 prompt 索引
 
@@ -203,9 +212,29 @@ writer 用。详见 `tools/user-corpus-explorer/SKILL.md` 与 `external/user-cor
 | 论文章节缺失 | 质量门记入 `quality_report.md`，但 packaging 仍打包当前结果 |
 | docx 转换失败 | 仅交付 `paper.md`，写 `diagnostics.md`，**不打断** |
 
-## 工作目录
+## 运行模式与交付结构
 
-每次运行都新建一个 `workdir/{YYYYMMDD-HHMMSS}-{8位hash}/`，所有阶段产物落在其中，
-便于失败定位和重试。详见 `references/workdir-protocol.md`。
+每次运行都必须显式记录 `run_mode`：
+
+- `formal`：真实输入齐全，可写正式结论。
+- `demo`：用户允许用合成/示例数据验证流程，不得写正式结果。
+- `blocked`：缺关键输入且未授权 demo，停止并输出诊断。
+
+最终交付必须同步到：
+
+```text
+output/
+├── source code/
+├── paper/
+│   ├── paper.md
+│   ├── paper.docx
+│   ├── paper.txt
+│   └── paper.pdf
+└── 附件文件夹/
+```
+
+每次运行仍新建 `runtime/{YYYYMMDD-HHMMSS}-{8位hash}/`，所有中间产物落在其中，
+便于失败定位和重试。详见 `references/project-root-protocol.md` 与
+`references/workdir-protocol.md`。
 
 

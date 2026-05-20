@@ -3,6 +3,7 @@
 ## 入口条件
 
 - `intake.json` 已落盘且 `is_math_modeling=true` 且 `ques_count >= 1`。
+- `run_state.json.run_mode != blocked`。
 
 ## 阶段任务
 
@@ -34,7 +35,7 @@ else:  # 首次
 ### 2. 上游论文与模板匹配
 
 调 `scripts/runtime/match_thesis.py`，输入 `intake.json`，输出
-`workdir/{task_id}/thesis_match.json`（schema 见 `references/workdir-protocol.md`）。
+`runtime/{task_id}/thesis_match.json`（schema 见 `references/workdir-protocol.md`）。
 
 ### 3. 加载 modeler prompt
 
@@ -51,13 +52,17 @@ else:  # 首次
 
 ### 4. 产出建模方案
 
-modeler 按其 prompt 中的输出格式撰写 `workdir/{task_id}/modeling_plan.md`，
+modeler 按其 prompt 中的输出格式撰写 `runtime/{task_id}/modeling_plan.md`，
 覆盖：
 - 0 EDA / 数据预处理方案。
 - 1..N 各小问建模方案（类型判断 / 模型选择 / 求解思路 / 验证 / 可视化）。
 - N+1 敏感性分析方案。
 - 末尾**参考来源**段：标注 zhanwen / user-corpus / 内置算法库各贡献了哪些
   思路，便于审计。
+
+若 `run_mode=demo`，方案必须明确哪些输入是合成/示例数据，只能作为流程验证。
+若发现 formal 模式缺关键数据，停止并把 `run_state.json.run_mode` 改为 `blocked`，
+不得让 coder 自行补造数据。
 
 ### 5. 角色守则强制载入
 
@@ -68,8 +73,8 @@ modeler 按其 prompt 中的输出格式撰写 `workdir/{task_id}/modeling_plan.
 
 | 路径 | 必须 | 说明 |
 |---|---|---|
-| `workdir/{task_id}/thesis_match.json` | 是 | 上游匹配结果 |
-| `workdir/{task_id}/modeling_plan.md` | 是 | 建模方案 |
+| `runtime/{task_id}/thesis_match.json` | 是 | 上游匹配结果 |
+| `runtime/{task_id}/modeling_plan.md` | 是 | 建模方案 |
 | `external/zhanwen-mathmodel/.complete` | 视情况 | 拉取成功标记 |
 | `external/zhanwen-mathmodel/.failed` | 视情况 | 拉取失败标记 |
 | `external/zhanwen-mathmodel/.skip` | 视情况 | 用户永久跳过标记 |

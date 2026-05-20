@@ -4,6 +4,8 @@
 
 - `modeling_plan.md` 已落盘且包含每个 quesN 的小节。
 - `thesis_match.json` 已落盘。
+- `run_state.json.run_mode != blocked`。
+- 若 `run_mode=formal`，`run_state.json.formal_result == true` 且 `missing_inputs=[]`。
 
 ## 阶段任务
 
@@ -11,6 +13,10 @@
 
 - prompt：`prompts/coder.md`
 - 守则：`references/roles/coder-guide.md`
+- 协议：`references/run-mode-protocol.md`、`references/chart-quality-gate.md`
+
+在生成任何代码前读取 `run_state.json`。若 `run_mode=blocked`，立即停止并写
+`diagnostics.md`；若缺数据但用户未授权 demo，禁止自行造数。
 
 ### 2. 任务清单生成
 
@@ -53,6 +59,18 @@ while attempt < EZMM_MAX_RETRIES_CODER:   # 默认 2
                 break  # 不打断，继续下一子任务
 ```
 
+### 3.1 禁止静默 synthetic fallback
+
+`formal` 模式下，脚本不得因为附件缺失、读取失败或字段不存在而自动调用
+`synthetic_cases()`、`make_demo_data()`、随机数造样本或内置示例数据。正确处理是：
+
+- 写入 `diagnostics.md`，说明缺失的文件、字段或样例；
+- 将对应子任务记录为 `blocked` 或 `failed`；
+- 不生成会被 writer 当作正式结论的结果表和图。
+
+只有 `run_mode=demo` 且 `formal_result=false` 时可以生成合成数据，且所有结果表必须
+包含 `synthetic=true` 字段，图表 manifest 也必须标记 `synthetic=true`。
+
 **库缺失 L2 降级表**（节选自 fault-tolerance.md，便于本阶段查阅）：
 
 | 缺失库 | 替代方案 |
@@ -66,7 +84,18 @@ while attempt < EZMM_MAX_RETRIES_CODER:   # 默认 2
 
 降级动作必须在脚本开头注释里写：`# 替换 xgboost -> sklearn.GradientBoosting (库缺失)`。
 
-### 4. Sub-agent 派单细节（可选）
+### 4. 图表质量登记（强制）
+
+每张图保存前必须先校验待绘图数据，并写入
+`figures/chart_manifest.json`。至少登记：
+
+- `figure`、`source`、`rows_before`、`rows_after_filter`、`filtered_zero_rows`
+- `all_zero`、`all_equal`、`synthetic`、`usable_in_paper`、`reason`
+
+全 0、全相等、过滤后有效行少于 2、缺单位或缺指标名的图不得进入论文。柱状图尤其
+必须剔除无意义零值行，不能把“0 值柱子”当作有效信息。
+
+### 5. Sub-agent 派单细节（可选）
 
 派单决策由 `external/tools/agent_mode.{single,multi,hybrid}` 标记决定。
 **single 模式跳过本节**，按顺序执行所有子任务；**multi / hybrid 模式**按下文派单。
@@ -94,18 +123,18 @@ prompt        = (
 
 主流程等 subagent 全部 DONE 后聚合 `execution_log.md`，再进 pipeline 04。
 
-### 4. 数据特征文本输出（强制）
+### 6. 数据特征文本输出（强制）
 
 每段绑图代码后必须 `print` 关键数据特征（模板见 `prompts/coder.md`）。
 没有 print 的图后续 writer 无法解读，质量门会扣分。
 
-### 5. 工程优化约束（优化类问题强制）
+### 7. 工程优化约束（优化类问题强制）
 
 若 `intake.json` 中识别出"优化类"（关键词：最优 / 优化 / 极值 / 最大化 /
 最小化 / 调度 / 选择），coder 必须在 `print` 中包含"无约束 vs 物理约束"对比
 段落（详见 `prompts/coder.md`）。
 
-### 6. 执行日志
+### 8. 执行日志
 
 `execution_log.md` 是 markdown 表格 + 详细记录块：
 
@@ -122,10 +151,11 @@ prompt        = (
 
 | 路径 | 必须 | 说明 |
 |---|---|---|
-| `workdir/{task_id}/src/*.py` | 是 | 每个子任务一个脚本 |
-| `workdir/{task_id}/results/` | 是 | 至少 1 个结果文件 |
-| `workdir/{task_id}/figures/` | 是 | 至少 EDA + 每问 1 张关键图 |
-| `workdir/{task_id}/execution_log.md` | 是 | 执行状态汇总 |
+| `runtime/{task_id}/src/*.py` | 是 | 每个子任务一个脚本 |
+| `runtime/{task_id}/results/` | 是 | 至少 1 个结果文件；demo 结果需含 `synthetic=true` |
+| `runtime/{task_id}/figures/` | 是 | 只保存通过图表有效性检查的图 |
+| `runtime/{task_id}/figures/chart_manifest.json` | 是 | 图表质量登记 |
+| `runtime/{task_id}/execution_log.md` | 是 | 执行状态汇总 |
 
 ## 失败诊断
 
@@ -135,6 +165,8 @@ prompt        = (
 | 全部脚本失败（≥ 80% 子任务 failed） | **打断**，输出最常见错误类型，让用户检查环境 |
 | 关键库（如 xgboost）缺失 | 不打断，coder 自动 fallback 到 sklearn 同类模型（参考本文件 §3 L2 降级表） |
 | 附件读取失败 | 不打断，相关子任务标记 skip 并写诊断 |
+| formal 模式下需要合成数据 | **打断该子任务**，写诊断；不得自动 fallback |
+| 图表数据全 0 / 全相等 | 不画图或标记 `usable_in_paper=false`，writer 不得引用 |
 | simplify skill 已启用 | 所有子任务完成后调 `tools/simplify/SKILL.md` 写 `simplify_report.md`（不修代码） |
 
 ## 下一阶段入口

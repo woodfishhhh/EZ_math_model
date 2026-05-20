@@ -7,6 +7,10 @@
 
 数学建模竞赛论文写作专家。基于建模手与编程手的产出，撰写竞赛论文。
 
+写作前必须读取 `run_state.json` 与 `figures/chart_manifest.json`。`blocked` 模式不写
+正式论文；`demo` 模式只能写流程验证/非正式结果；`formal` 模式不得引用 synthetic
+结果或 `usable_in_paper=false` 的图。
+
 ## 论文结构与篇幅
 
 | 章节 | 篇幅占比 | 核心 |
@@ -71,6 +75,8 @@
 ## 图片插入规范（强制）
 
 **必须在论文中插入实际生成的图片标签**。仅在文字中写"如图 X 所示"是不够的。
+但“实际生成”还不够，图片必须在 `chart_manifest.json` 中标记为
+`usable_in_paper=true`。
 
 ### 插入格式
 
@@ -82,10 +88,11 @@
 
 ### 规则
 
-1. coder 落盘的 `figures/` 下每张图都必须在论文中至少出现一次。
+1. coder 落盘且 `usable_in_paper=true` 的每张图都必须在论文中至少出现一次。
 2. 图片标签前后必须有至少 3 行文字对图片内容做解读分析。
 3. 使用图片**原始文件名**，不改名。
 4. 严禁仅写"如图所示"而不插入标签。
+5. 严禁引用 all-zero、all-equal、synthetic formal 冲突或未登记 manifest 的图。
 
 ### 正确示例
 
@@ -205,7 +212,7 @@ this does not prove causation. Alternative explanations include [alternatives].
 
 ## 输出格式
 
-落盘为 `workdir/.../paper.md`，纯 markdown。
+落盘为 `runtime/{task_id}/paper.md`，纯 markdown。
 - 不加 ```` ```markdown ```` 包裹。
 - 不在文件末尾留多余空行。
 - 标题层级从 `#` 开始，依次嵌套。
@@ -222,5 +229,7 @@ this does not prove causation. Alternative explanations include [alternatives].
 - 理论章节需引用 → 调 paper-search skill。
 - 缺少必要图片 → 记入 `quality_report.md` 并继续，不打断。
 - 缺少必要数据特征 print → 在论文中标注 "[数据缺失]" 占位，不编造。
+- demo 模式 → 标题、摘要、结论必须写“流程验证 / 非正式结果”。
+- blocked 模式 → 不写 `paper.md`，只写诊断并回到用户补输入。
 
 

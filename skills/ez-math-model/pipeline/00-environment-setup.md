@@ -1,9 +1,9 @@
-# Pipeline 00 — Setup Gate + 环境检查
+# Pipeline 00 — Setup Gate + 环境检查 + 项目目录初始化
 
 ## 入口条件
 
 - 用户给出题目（文本 / PDF / DOCX / Markdown）或附件。
-- 当前工作目录可写。
+- 当前项目总文件夹可写。
 
 ## 硬门禁：首次必须 setup
 
@@ -27,21 +27,28 @@ external/tools/setup_state.json
 
 ## 阶段任务
 
-按顺序执行 1-8：
+按顺序执行 1-10：
 
-1. 执行 setup gate：读取或创建 `external/tools/setup_state.json`。
-2. 创建本次任务的工作目录：调用 `scripts/runtime/init_workdir.ps1`（POSIX 用
-   等价 sh 实现，本版本仅给 PowerShell）。命名规则见 `references/workdir-protocol.md`。
-3. 检查 Python 可用：`python --version` ≥ 3.10。
-4. 检查关键库：`numpy pandas matplotlib seaborn scipy scikit-learn`。缺失给出
+1. 识别项目总文件夹，按 `references/project-root-protocol.md` 创建
+   `用户输入/`、`runtime/`、`output/`、`output/source code/`、`output/paper/`、
+   `output/附件文件夹/`。
+2. 创建本次任务的运行目录：调用
+   `scripts/runtime/init_workdir.ps1 -ProjectRoot <project_root>`。命名规则见
+   `references/workdir-protocol.md`。
+3. 执行 setup gate：读取或创建 `external/tools/setup_state.json`。若未完成 setup，
+   必须向用户提问；未经用户确认不得写永久 marker。若用户要求本次先继续，只能写
+   `runtime/{task_id}/setup_assumptions.json`，并设置 `setup_status=temporary_default`。
+4. 检查 Python 可用：`python --version` ≥ 3.10。
+5. 检查关键库：`numpy pandas matplotlib seaborn scipy scikit-learn`。缺失给出
    一行 `pip install` 提示，但**不自动安装**。
-5. 检查中文字体：尝试 `SimHei` / `Noto Sans CJK SC` / `Heiti SC`，写入
+6. 检查中文字体：尝试 `SimHei` / `Noto Sans CJK SC` / `Heiti SC`，写入
    `env_check.json`。
-6. 检查 git 与 zhanwen 缓存状态：`external/zhanwen-mathmodel/.complete` /
+7. 检查 git 与 zhanwen 缓存状态：`external/zhanwen-mathmodel/.complete` /
    `.failed` / `.skip` 标记是否存在。
-7. 首次 setup 时执行**工具发现 + 强制询问**（详见下文）；已完成 setup 时只扫描状态，
+8. 首次 setup 时执行**工具发现 + 强制询问**（详见下文）；已完成 setup 时只扫描状态，
    不再追问。
-8. 写入 `workdir/.../env_check.json` 与 `workdir/.../tools_status.json`。
+9. 根据 setup 结果写入 `runtime/{task_id}/run_state.json` 的 `setup_status`。
+10. 写入 `runtime/{task_id}/env_check.json` 与 `runtime/{task_id}/tools_status.json`。
 
 ## 工具发现节点（关键）
 
@@ -56,7 +63,7 @@ external/tools/setup_state.json
 
 ### 第一步：扫描
 
-调 `scripts/install/discover_tools.ps1 -Out workdir/.../tools_status.json`。
+调 `scripts/install/discover_tools.ps1 -Out runtime/{task_id}/tools_status.json`。
 该脚本读 env var、检查命令行可用性，输出四个能力域的状态。
 
 ### 第二步：分组询问
@@ -180,15 +187,16 @@ external/tools/setup_state.json
 
 ### 第三步：落 JSON 状态
 
-按用户回答写入 `external/tools/setup_state.json`，同时可继续写旧版标记文件以兼容
-现有子文档。
+只在用户明确完成并确认保存 setup 后，才写入 `external/tools/setup_state.json`，
+同时可继续写旧版标记文件以兼容现有子文档。若用户没有完成 setup，但要求本次
+先继续，只能写入 `runtime/{task_id}/setup_assumptions.json`，不得写永久 marker。
 
 | 用户选择 | 落盘 |
 |---|---|
-| `yes` 但需配置 | 引导用户在 `~/.ezmm.env` 写 env var，提示 "配置完成后说 'reload tools'" |
-| `free-only` | 写 `external/tools/<domain>.free` |
-| `skip` | 写 `external/tools/<domain>.skip` |
-| `later` | 不写任何标记，下次入口仍会问 |
+| `yes` 但需配置 | 用户确认保存后，引导用户在 `~/.ezmm.env` 写 env var，提示 "配置完成后说 'reload tools'" |
+| `free-only` | 用户确认保存后，写 `external/tools/<domain>.free` |
+| `skip` | 用户确认保存后，写 `external/tools/<domain>.skip` |
+| `later` | 不写任何永久标记，下次入口仍会问 |
 
 七个域决定后写 `external/tools/setup_state.json`；若没有 `setup_completed: true`，
 下次入口仍必须问。
@@ -210,7 +218,7 @@ external/tools/setup_state.json
     "agent_mode": "hybrid",
     "inherited_skills": "recommended"
   },
-  "tool_status_snapshot": "workdir/<task_id>/tools_status.json",
+  "tool_status_snapshot": "runtime/<task_id>/tools_status.json",
   "notes": "Do not store secrets here. Use EZMM_ env vars."
 }
 ```
@@ -239,17 +247,50 @@ external/tools/setup_state.json
 
 **绝不**要求用户把 token 直接贴进对话。
 
+### 临时默认状态
+
+如果用户明确说“先按默认跑一次”或宿主无法交互，只能写本次 runtime 内状态：
+
+```json
+{
+  "schema_version": "1.0",
+  "setup_status": "temporary_default",
+  "created_at": "2026-05-20T18:00:00+08:00",
+  "decisions": {
+    "pdf": "free-only",
+    "scholar": "free-only",
+    "dataset": "skip unless required by problem",
+    "webcrawl": "skip unless required by problem",
+    "corpus": "skip",
+    "agent_mode": "hybrid",
+    "inherited_skills": "recommended"
+  },
+  "persisted": false
+}
+```
+
+此时必须同步更新 `runtime/{task_id}/run_state.json`：
+
+```json
+{
+  "setup_status": "temporary_default",
+  "can_package": false
+}
+```
+
+质量门最高只能给 `provisional_pass`，最终诊断必须说明 setup 未持久化。
+
 ### 状态持久化
 
-`external/tools/` 目录结构：
+`external/tools/` 目录结构只在用户确认保存后出现：
 
 ```
 external/tools/
 ├── setup_state.json            # setup 硬门禁状态，判断是否还需要强制提问
-├── .tools_decided              # 已询问过，不再追问
+├── .tools_decided              # 兼容标记；不能替代 setup_state.json
 ├── pdf.free                    # 用户选了 free-only
 ├── scholar.skip                # 用户选了 skip
-├── dataset.later               # 不写文件（later 不留痕）
+├── dataset.skip                # later 不写文件
 ├── webcrawl.free
 ├── corpus.yes                  # 用户选了启用 user-corpus
 ├── agent_mode.hybrid           # 用户选了 hybrid 模式
@@ -264,14 +305,17 @@ external/tools/
 
 | 路径 | 必须 | 说明 |
 |---|---|---|
-| `workdir/{task_id}/` | 是 | 工作目录已创建 |
-| `workdir/{task_id}/README.md` | 是 | 由 `templates/readme_workdir.md` 渲染 |
-| `workdir/{task_id}/env_check.json` | 是 | 环境检查结果 |
-| `workdir/{task_id}/tools_status.json` | 是 | 外部工具扫描结果（discover_tools 输出） |
-| `external/tools/setup_state.json` | 首次 setup 后 | setup gate 状态；后续是否跳过交互式 setup 的唯一主标记 |
-| `workdir/{task_id}/attachments/` | 是 | 用户附件已落盘（可空） |
+| `runtime/{task_id}/` | 是 | 本次运行目录已创建 |
+| `runtime/{task_id}/project_paths.json` | 是 | 项目总文件夹与标准输出目录映射 |
+| `runtime/{task_id}/run_state.json` | 是 | setup_status、run_mode、formal_result 等运行状态 |
+| `runtime/{task_id}/README.md` | 是 | 由 `templates/readme_workdir.md` 渲染 |
+| `runtime/{task_id}/env_check.json` | 是 | 环境检查结果 |
+| `runtime/{task_id}/tools_status.json` | 是 | 外部工具扫描结果（discover_tools 输出） |
+| `runtime/{task_id}/setup_assumptions.json` | 临时默认时 | 本次临时 setup 决策；不得持久化 |
+| `external/tools/setup_state.json` | 用户确认保存后 | setup gate 状态；后续是否跳过交互式 setup 的唯一主标记 |
+| `runtime/{task_id}/attachments/` | 是 | 用户附件副本（可空） |
 | `external/tools/.tools_decided` | 可选兼容 | 旧版询问完成标记；不能替代 setup_state.json |
-| `external/tools/<domain>.{free,skip}` | 视用户选择 | 域级配置标记 |
+| `external/tools/<domain>.{free,skip,yes}` | 视用户选择 | 域级配置标记，仅用户确认保存后写 |
 
 ## env_check.json schema
 
@@ -298,7 +342,7 @@ external/tools/
 | 工作目录创建失败（权限） | **打断**。告知具体原因。 |
 | 用户选 `yes` 但 env var 仍未配置 | 不打断。降级为 `free-only` 等价，写诊断说明哪些域降级了。 |
 | 用户已经决策过且 `setup_state.json.setup_completed == true` | 跳过交互式 setup，做轻量检查后进入 pipeline 01。 |
-| 只有 `.tools_decided` 但没有 `setup_state.json` | 从旧标记迁移生成 JSON；无法补齐 7 个 decisions 时必须问用户。 |
+| 只有 `.tools_decided` 但没有 `setup_state.json` | 旧标记只能作为预填线索；仍必须让用户确认后才可生成 JSON。 |
 
 ## 下一阶段入口
 
