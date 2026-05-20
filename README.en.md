@@ -6,6 +6,10 @@ EZ Math Model is a publish-ready Agent Skill for mathematical modeling contests.
 
 It is designed for CUMCM, MCM, ICM, graduate mathematical modeling contests, and course projects that look like contest-style modeling tasks.
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=woodfishhhh/EZ_math_model&type=Date)](https://www.star-history.com/#woodfishhhh/EZ_math_model&Date)
+
 ## What It Does
 
 - Parses PDF, DOCX, Markdown, CSV, XLSX, and mixed attachments.

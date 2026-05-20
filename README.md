@@ -6,6 +6,10 @@ EZ Math Model 是一个面向数学建模竞赛的可上架 Agent Skill。它把
 
 适用场景包括全国大学生数学建模竞赛、MCM/ICM、美赛、研究生数学建模竞赛，以及课程里的建模作业。
 
+## Star 趋势图
+
+[![Star History Chart](https://api.star-history.com/svg?repos=woodfishhhh/EZ_math_model&type=Date)](https://www.star-history.com/#woodfishhhh/EZ_math_model&Date)
+
 ## 能做什么
 
 - 读取 PDF、DOCX、Markdown、CSV、XLSX 和混合附件。
