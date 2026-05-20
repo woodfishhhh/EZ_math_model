@@ -4,9 +4,7 @@ description: |
   论文检索子 skill。通过 OpenAlex API（默认）、arXiv、Semantic Scholar、CrossRef
   四个免费源聚合搜索学术文献，返回结构化论文元信息（含 DOI / 摘要 / 引用数）。
   默认零配置；可选 EZMM_OPENALEX_EMAIL / EZMM_S2_API_KEY 提升配额。
-allowed-tools:
-  - Bash
-  - Read
+allowed-tools: Bash, Read
 read_when:
   - 论文写作时需要参考文献
   - 模型选择论证段需要理论支撑

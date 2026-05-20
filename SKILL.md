@@ -2,14 +2,7 @@
 name: ez-math-model
 description: Use when solving CUMCM, MCM, ICM, or other mathematical modeling tasks that need contest problem intake, model selection, Python solving, figures, paper writing, quality audit, and packaged deliverables.
 license: MIT
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
-  - WebFetch
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch
 metadata:
   display_name: EZ Math Model
   type: workflow-skill

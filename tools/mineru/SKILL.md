@@ -4,9 +4,7 @@ description: |
   PDF / 图片 / 网页高质量解析为 Markdown。三种部署形态全部免费：本地 CLI（开源）、
   云 API（注册免费 token + 配额，超额才付费）、网页 flash（零注册，单文件 ≤10MB / ≤20页）。
   在中文学术 PDF / 表格 / 公式上识别质量显著高于 pdfplumber。
-allowed-tools:
-  - Bash
-  - Read
+allowed-tools: Bash, Read
 read_when:
   - 题目 PDF 含表格 / 公式 / 复杂排版
   - 阅读 zhanwen 优秀论文 PDF
