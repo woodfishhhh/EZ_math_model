@@ -1,0 +1,41 @@
+# Runtime workdirs
+workdir/
+*.workdir/
+
+# zhanwen/MathModel runtime fetch target (keep dir, ignore contents)
+external/zhanwen-mathmodel/*
+!external/zhanwen-mathmodel/.gitkeep
+!external/zhanwen-mathmodel/README.md
+
+# external tools decision markers (keep dir + readme + .gitkeep, ignore others)
+external/tools/*
+!external/tools/.gitkeep
+!external/tools/README.md
+
+# user-supplied corpus (keep dir + readme + .gitkeep, ignore everything user drops in)
+external/user-corpus/*
+!external/user-corpus/.gitkeep
+!external/user-corpus/README.md
+
+# user-level secrets — never commit
+.env
+.env.local
+*.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Build / cache
+*.zip
+*.tar.gz
+.cache/

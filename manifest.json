@@ -1,0 +1,139 @@
+{
+  "name": "ez-math-model",
+  "display_name": "EZ Math Model",
+  "version": "0.1.0",
+  "description": "数学建模一站式 skill：拆题、建模、求解、出图、写论文、质量门、打包。",
+  "license": "MIT",
+  "author": {
+    "name": "woodfishhhh",
+    "email": "3053932588@qq.com"
+  },
+  "repository": "https://github.com/woodfishhhh/EZ_math_model",
+  "homepage": "https://github.com/woodfishhhh/EZ_math_model#readme",
+  "language_default": "zh",
+  "python_min_version": "3.10",
+  "entrypoint": "SKILL.md",
+  "readme": {
+    "en": "README.md",
+    "zh-CN": "README.zh-CN.md"
+  },
+  "star_map": "STAR_MAP.md",
+  "marketplace": {
+    "metadata": "marketplace.json",
+    "package": "package.json",
+    "targets": ["Codex", "Claude Code", "Agent Skills"],
+    "categories": ["Education", "Data Science", "Research", "Writing"],
+    "tags": ["mathematical modeling", "CUMCM", "MCM", "ICM", "Python", "academic writing"]
+  },
+  "pipeline": [
+    "pipeline/00-environment-setup.md",
+    "pipeline/01-problem-intake.md",
+    "pipeline/02-modeling-plan.md",
+    "pipeline/03-coding-solve.md",
+    "pipeline/04-paper-writing.md",
+    "pipeline/05-quality-audit.md",
+    "pipeline/06-packaging-output.md"
+  ],
+  "prompts": {
+    "shared": "prompts/shared.md",
+    "coordinator": "prompts/coordinator.md",
+    "modeler": "prompts/modeler.md",
+    "coder": "prompts/coder.md",
+    "writer": "prompts/writer.md"
+  },
+  "templates": {
+    "paper_zh": "templates/paper_zh.md",
+    "paper_en": "templates/paper_en.md",
+    "chapter_outline": "templates/chapter_outline.toml",
+    "workdir_readme": "templates/readme_workdir.md"
+  },
+  "references": {
+    "workdir_protocol": "references/workdir-protocol.md",
+    "algorithms_index": "references/algorithms/README.md",
+    "external_tools_catalog": "references/external-tools-catalog.md",
+    "fault_tolerance": "references/fault-tolerance.md",
+    "agent_mode": "references/agent-mode.md",
+    "exemplar_papers_index": "references/exemplar-papers/README.md",
+    "roles": {
+      "modeler": "references/roles/modeler-guide.md",
+      "coder": "references/roles/coder-guide.md",
+      "writer": "references/roles/writer-guide.md"
+    }
+  },
+  "tools": {
+    "brainstorming": "tools/brainstorming/SKILL.md",
+    "dataset": "tools/dataset/SKILL.md",
+    "dispatching_parallel_agents": "tools/dispatching-parallel-agents/SKILL.md",
+    "docx": "tools/docx/SKILL.md",
+    "external_context": "tools/external-context/SKILL.md",
+    "humanizer": "tools/humanizer/SKILL.md",
+    "mineru": "tools/mineru/SKILL.md",
+    "paper_search": "tools/paper_search/SKILL.md",
+    "pdf": "tools/pdf/SKILL.md",
+    "scholar": "tools/scholar/SKILL.md",
+    "scientific_slides": "tools/scientific-slides/SKILL.md",
+    "simplify": "tools/simplify/SKILL.md",
+    "subagent_driven_development": "tools/subagent-driven-development/SKILL.md",
+    "systematic_debugging": "tools/systematic-debugging/SKILL.md",
+    "user_corpus_explorer": "tools/user-corpus-explorer/SKILL.md",
+    "verification_before_completion": "tools/verification-before-completion/SKILL.md",
+    "webcrawl": "tools/webcrawl/SKILL.md",
+    "xlsx": "tools/xlsx/SKILL.md"
+  },
+  "scripts": {
+    "install": {
+      "fetch_zhanwen_ps1": "scripts/install/fetch_zhanwen.ps1",
+      "fetch_zhanwen_sh": "scripts/install/fetch_zhanwen.sh",
+      "verify_environment_ps1": "scripts/install/verify_environment.ps1",
+      "discover_tools_ps1": "scripts/install/discover_tools.ps1"
+    },
+    "runtime": {
+      "init_workdir_ps1": "scripts/runtime/init_workdir.ps1",
+      "match_thesis_py": "scripts/runtime/match_thesis.py",
+      "pack_deliverable_ps1": "scripts/runtime/pack_deliverable.ps1"
+    }
+  },
+  "external": {
+    "zhanwen_mathmodel": {
+      "upstream": "https://github.com/zhanwen/MathModel",
+      "local_dir": "external/zhanwen-mathmodel",
+      "fetch_strategy": "git clone --depth 1 --filter=blob:none --sparse",
+      "sparse_paths": [
+        "国赛论文/",
+        "国赛试题/",
+        "美赛论文/",
+        "2024年数模悉知&论文模版/",
+        "2025年数模悉知&论文模版/",
+        "2024年最终获奖名单/",
+        "数学建模Latex模版/",
+        "README.md"
+      ],
+      "marker_files": {
+        "complete": "external/zhanwen-mathmodel/.complete",
+        "failed": "external/zhanwen-mathmodel/.failed",
+        "skip": "external/zhanwen-mathmodel/.skip"
+      },
+      "license_note": "上游内容版权归原作者所有，仅供本机学术参考；不复制不分发不入库。"
+    },
+    "tools_decisions": {
+      "local_dir": "external/tools",
+      "marker_files": {
+        "decided": "external/tools/.tools_decided",
+        "domain_pattern": "external/tools/<domain>.{free,skip,yes}",
+        "agent_mode_pattern": "external/tools/agent_mode.{single,multi,hybrid}",
+        "inherited_skills_pattern": "external/tools/inherited_skills.{yes,recommended,skip}"
+      },
+      "domains": ["pdf", "scholar", "dataset", "webcrawl", "corpus", "agent_mode", "inherited_skills"]
+    },
+    "user_corpus": {
+      "local_dir": "external/user-corpus",
+      "explorer_doc": "tools/user-corpus-explorer/SKILL.md",
+      "runtime_outputs": {
+        "agents_md": "external/user-corpus/AGENTS.md",
+        "cache": "external/user-corpus/.corpus_index.json"
+      },
+      "note": "用户自带参考资料，由 corpus explorer subagent 在 pipeline 01 末尾扫描产出 AGENTS.md。runtime_outputs 是运行时才产出的文件，不在仓库初始静态资产中。"
+    }
+  },
+  "env_example": ".env.example"
+}

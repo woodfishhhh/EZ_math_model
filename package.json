@@ -1,0 +1,52 @@
+{
+  "name": "ez-math-model",
+  "version": "0.1.0",
+  "description": "Agent Skill for CUMCM, MCM, ICM, and contest-style mathematical modeling workflows.",
+  "license": "MIT",
+  "author": {
+    "name": "woodfishhhh",
+    "email": "3053932588@qq.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/woodfishhhh/EZ_math_model.git"
+  },
+  "homepage": "https://github.com/woodfishhhh/EZ_math_model#readme",
+  "keywords": [
+    "agent-skill",
+    "skillsmp",
+    "mathematical-modeling",
+    "cumcm",
+    "mcm",
+    "icm",
+    "python",
+    "paper-writing",
+    "data-analysis"
+  ],
+  "files": [
+    "SKILL.md",
+    "README.md",
+    "README.zh-CN.md",
+    "STAR_MAP.md",
+    "LICENSE",
+    "VERSION",
+    "manifest.json",
+    "marketplace.json",
+    "pipeline/",
+    "prompts/",
+    "references/",
+    "scripts/",
+    "templates/",
+    "tools/",
+    "external/"
+  ],
+  "skill": {
+    "name": "ez-math-model",
+    "entrypoint": "SKILL.md",
+    "language_default": "zh",
+    "python_min_version": "3.10"
+  },
+  "scripts": {
+    "validate": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install/verify_environment.ps1"
+  }
+}
