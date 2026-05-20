@@ -48,13 +48,19 @@ EZ_math_model/
 Codex:
 
 ```powershell
-gh skill install woodfishhhh/EZ_math_model ez-math-model --agent codex --scope user
+gh skill install woodfishhhh/EZ_math_model skills/ez-math-model --agent codex --scope user
 ```
 
 Claude Code:
 
 ```bash
-gh skill install woodfishhhh/EZ_math_model ez-math-model --agent claude-code --scope user
+gh skill install woodfishhhh/EZ_math_model skills/ez-math-model --agent claude-code --scope user
+```
+
+If an older local copy already exists, overwrite it with `--force`:
+
+```powershell
+gh skill install woodfishhhh/EZ_math_model skills/ez-math-model --agent codex --scope user --force
 ```
 
 Then ask:

@@ -48,13 +48,19 @@ EZ_math_model/
 Codex:
 
 ```powershell
-gh skill install woodfishhhh/EZ_math_model ez-math-model --agent codex --scope user
+gh skill install woodfishhhh/EZ_math_model skills/ez-math-model --agent codex --scope user
 ```
 
 Claude Code:
 
 ```bash
-gh skill install woodfishhhh/EZ_math_model ez-math-model --agent claude-code --scope user
+gh skill install woodfishhhh/EZ_math_model skills/ez-math-model --agent claude-code --scope user
+```
+
+如果本机已经装过旧版，加 `--force` 覆盖：
+
+```powershell
+gh skill install woodfishhhh/EZ_math_model skills/ez-math-model --agent codex --scope user --force
 ```
 
 然后在对话里说：
