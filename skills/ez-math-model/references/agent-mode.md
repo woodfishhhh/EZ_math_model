@@ -137,6 +137,7 @@ subagent 之间**不直接通信**，只通过 `workdir/` 下的文件：
 
 | 配置 | 默认 | 含义 |
 |---|---|---|
+| `external/tools/setup_state.json.decisions.agent_mode` | hybrid | setup gate 的主状态 |
 | `external/tools/agent_mode.{single,multi,hybrid}` | hybrid | 用户决策标记 |
 | `EZMM_MAX_CONCURRENCY` | 2 | 并发 subagent 上限 |
 | `EZMM_SUBAGENT_SOFT_TIMEOUT` | 300（秒） | 软超时 |

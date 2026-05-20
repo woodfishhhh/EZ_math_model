@@ -91,7 +91,12 @@
 
 ## 询问策略（pipeline 00 用）
 
-四个域分组，每组只问 1 个问题，4 选项：
+pipeline 00 先检查 `external/tools/setup_state.json`。没有该文件、JSON 损坏、
+`setup_completed` 不是 `true`，或缺少 7 个 `decisions` key 时，必须进入首次
+setup 提问；完成后写入该 JSON。旧版 `.tools_decided` / `.enabled` / `.skip-*`
+只作为兼容线索，不能替代 `setup_state.json`。
+
+setup 一共记录 7 个域；其中外部工具的 4 个域按下面模式提问，每组只问 1 个问题：
 
 ```
 [PDF 解析] 是否启用 MinerU 提升 PDF 题目识别质量？
@@ -101,8 +106,9 @@
   later      — 暂跳过，下次再问（不写 .skip 标记）
 ```
 
-`yes` / `free-only` 会写入 `external/tools/.enabled`；`skip` 写入
-`external/tools/.skip-pdf`（域内永久跳过）；`later` 不写任何标记。
+用户选择最终写入 `setup_state.json.decisions`。为兼容旧文档，也可以同步写
+`external/tools/<domain>.free`、`external/tools/<domain>.skip` 或
+`external/tools/agent_mode.hybrid` 等标记；`later` 不应标记为已完成。
 
 ## 不在 catalog 中的工具
 

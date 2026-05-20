@@ -1,7 +1,7 @@
 {
   "name": "ez-math-model",
   "display_name": "EZ Math Model",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "数学建模一站式 skill：拆题、建模、求解、出图、写论文、质量门、打包。",
   "license": "MIT",
   "author": {
@@ -118,6 +118,7 @@
     "tools_decisions": {
       "local_dir": "skills/ez-math-model/external/tools",
       "marker_files": {
+        "setup_state": "skills/ez-math-model/external/tools/setup_state.json",
         "decided": "skills/ez-math-model/external/tools/.tools_decided",
         "domain_pattern": "skills/ez-math-model/external/tools/<domain>.{free,skip,yes}",
         "agent_mode_pattern": "skills/ez-math-model/external/tools/agent_mode.{single,multi,hybrid}",

@@ -16,35 +16,32 @@ function Has-Cmd { param([string]$n) [bool](Get-Command $n -ErrorAction Silently
 function Has-Env { param([string]$n) -not [string]::IsNullOrEmpty([Environment]::GetEnvironmentVariable($n)) -or -not [string]::IsNullOrEmpty((Get-Item env:$n -ErrorAction SilentlyContinue).Value) }
 
 # Domain 1: PDF 解析
-$pdf = [ordered]@{
-  mineru_cli       = Has-Cmd 'mineru'
-  mineru_token     = Has-Env 'EZMM_MINERU_TOKEN'
-  pdfplumber       = $null  # 留给 Python 检测
-  pdftoppm         = Has-Cmd 'pdftoppm'
-}
+$pdf = [ordered]@{}
+$pdf['mineru_cli'] = Has-Cmd 'mineru'
+$pdf['mineru_token'] = Has-Env 'EZMM_MINERU_TOKEN'
+$pdf['pdfplumber'] = $null  # 留给 Python 检测
+$pdf['pdftoppm'] = Has-Cmd 'pdftoppm'
 
 # Domain 2: 学术搜索
-$scholar = [ordered]@{
-  openalex_email = Has-Env 'EZMM_OPENALEX_EMAIL'
-  s2_api_key     = Has-Env 'EZMM_S2_API_KEY'
-  serpapi_key    = Has-Env 'EZMM_SERPAPI_KEY'
-}
+$scholar = [ordered]@{}
+$scholar['openalex_email'] = Has-Env 'EZMM_OPENALEX_EMAIL'
+$scholar['s2_api_key'] = Has-Env 'EZMM_S2_API_KEY'
+$scholar['serpapi_key'] = Has-Env 'EZMM_SERPAPI_KEY'
 
 # Domain 3: 数据集
-$kaggleJson = Join-Path $env:USERPROFILE '.kaggle\kaggle.json'
-$dataset = [ordered]@{
-  kaggle_cli         = Has-Cmd 'kaggle'
-  kaggle_credentials = Test-Path $kaggleJson
-  hf_token           = Has-Env 'EZMM_HF_TOKEN'
-}
+$homeDir = if ($env:USERPROFILE) { $env:USERPROFILE } else { $HOME }
+$kaggleJson = if ($homeDir) { Join-Path $homeDir '.kaggle\kaggle.json' } else { $null }
+$dataset = [ordered]@{}
+$dataset['kaggle_cli'] = Has-Cmd 'kaggle'
+$dataset['kaggle_credentials'] = if ($kaggleJson) { Test-Path $kaggleJson } else { $false }
+$dataset['hf_token'] = Has-Env 'EZMM_HF_TOKEN'
 
 # Domain 4: 网页抓取
-$webcrawl = [ordered]@{
-  firecrawl_key = Has-Env 'EZMM_FIRECRAWL_KEY'
-  tavily_key    = Has-Env 'EZMM_TAVILY_KEY'
-  exa_key       = Has-Env 'EZMM_EXA_KEY'
-  serpapi_key   = Has-Env 'EZMM_SERPAPI_KEY'  # 复用，与 scholar 同一个
-}
+$webcrawl = [ordered]@{}
+$webcrawl['firecrawl_key'] = Has-Env 'EZMM_FIRECRAWL_KEY'
+$webcrawl['tavily_key'] = Has-Env 'EZMM_TAVILY_KEY'
+$webcrawl['exa_key'] = Has-Env 'EZMM_EXA_KEY'
+$webcrawl['serpapi_key'] = Has-Env 'EZMM_SERPAPI_KEY'  # 复用，与 scholar 同一个
 
 # Python 库可用性（pdfplumber / kaggle / requests / datasets）
 $python = Get-Command python -ErrorAction SilentlyContinue
@@ -64,14 +61,16 @@ $inheritedNames = @(
   'brainstorming','external-context','dispatching-parallel-agents',
   'subagent-driven-development','verification-before-completion'
 )
-$skillRoots = @(
-  (Join-Path $env:USERPROFILE '.claude\skills'),
-  (Join-Path $env:USERPROFILE '.codex\skills')
-)
+$skillRoots = @()
+if ($homeDir) {
+  $skillRoots += (Join-Path $homeDir '.claude\skills')
+  $skillRoots += (Join-Path $homeDir '.codex\skills')
+}
 $inherited = [ordered]@{}
 foreach ($n in $inheritedNames) {
   $hit = $null
   foreach ($r in $skillRoots) {
+    if (-not $r) { continue }
     $p = Join-Path $r $n
     if (Test-Path $p) { $hit = $p; break }
   }
@@ -87,6 +86,27 @@ if ($toolsDir) {
   }
 }
 
+$setupState = [ordered]@{
+  exists          = $false
+  setup_completed = $false
+  schema_version  = $null
+  path            = $null
+}
+if ($toolsDir) {
+  $setupPath = Join-Path $toolsDir 'setup_state.json'
+  $setupState['path'] = $setupPath
+  if (Test-Path $setupPath) {
+    $setupState['exists'] = $true
+    try {
+      $parsed = Get-Content -LiteralPath $setupPath -Raw | ConvertFrom-Json
+      $setupState['schema_version'] = $parsed.schema_version
+      $setupState['setup_completed'] = ($parsed.schema_version -eq '1.0' -and $parsed.setup_completed -eq $true)
+    } catch {
+      $setupState['setup_completed'] = $false
+    }
+  }
+}
+
 # 总览
 $result = [ordered]@{
   pdf              = $pdf
@@ -95,6 +115,7 @@ $result = [ordered]@{
   webcrawl         = $webcrawl
   inherited_skills = $inherited
   agent_mode       = $agentMode
+  setup_state      = $setupState
   python_libraries = $libs
   catalog_ref      = 'references/external-tools-catalog.md'
   agent_mode_ref   = 'references/agent-mode.md'

@@ -1,35 +1,58 @@
-# Pipeline 00 — 环境检查 + 工具发现
+# Pipeline 00 — Setup Gate + 环境检查
 
 ## 入口条件
 
 - 用户给出题目（文本 / PDF / DOCX / Markdown）或附件。
 - 当前工作目录可写。
 
+## 硬门禁：首次必须 setup
+
+在任何题目解析、建模、写代码、写论文之前，必须先检查：
+
+```
+external/tools/setup_state.json
+```
+
+处理规则：
+
+1. 文件不存在、JSON 无法解析、`setup_completed` 不是 `true`，或
+   `schema_version` 不是 `"1.0"`：进入 **首次 setup**，必须向用户提问。
+2. 用户说"重新配置工具"、"重置 setup"、"重新 setup"：忽略旧状态，重新提问。
+3. `setup_completed: true` 且用户没有要求重置：默认跳过交互式 setup，只执行本次
+   任务的轻量环境检查和工作目录创建。
+4. 旧版 `.tools_decided` 或 `<domain>.free/skip/yes` 标记只能作为迁移线索；若没有
+   `setup_state.json`，必须先创建 JSON 状态，不能只看旧标记就继续。
+
+禁止在 setup gate 未完成时进入 `pipeline/01-problem-intake.md`。
+
 ## 阶段任务
 
-按顺序执行 1-7：
+按顺序执行 1-8：
 
-1. 创建本次任务的工作目录：调用 `scripts/runtime/init_workdir.ps1`（POSIX 用
+1. 执行 setup gate：读取或创建 `external/tools/setup_state.json`。
+2. 创建本次任务的工作目录：调用 `scripts/runtime/init_workdir.ps1`（POSIX 用
    等价 sh 实现，本版本仅给 PowerShell）。命名规则见 `references/workdir-protocol.md`。
-2. 检查 Python 可用：`python --version` ≥ 3.10。
-3. 检查关键库：`numpy pandas matplotlib seaborn scipy scikit-learn`。缺失给出
+3. 检查 Python 可用：`python --version` ≥ 3.10。
+4. 检查关键库：`numpy pandas matplotlib seaborn scipy scikit-learn`。缺失给出
    一行 `pip install` 提示，但**不自动安装**。
-4. 检查中文字体：尝试 `SimHei` / `Noto Sans CJK SC` / `Heiti SC`，写入
+5. 检查中文字体：尝试 `SimHei` / `Noto Sans CJK SC` / `Heiti SC`，写入
    `env_check.json`。
-5. 检查 git 与 zhanwen 缓存状态：`external/zhanwen-mathmodel/.complete` /
+6. 检查 git 与 zhanwen 缓存状态：`external/zhanwen-mathmodel/.complete` /
    `.failed` / `.skip` 标记是否存在。
-6. **工具发现 + 询问**（详见下文）。
-7. 写入 `workdir/.../env_check.json` 与 `workdir/.../tools_status.json`。
+7. 首次 setup 时执行**工具发现 + 强制询问**（详见下文）；已完成 setup 时只扫描状态，
+   不再追问。
+8. 写入 `workdir/.../env_check.json` 与 `workdir/.../tools_status.json`。
 
 ## 工具发现节点（关键）
 
 ### 触发时机
 
-仅在以下两种情况询问：
-- `external/tools/.tools_decided` 标记不存在（首次使用）。
-- 用户显式说"重新配置工具"。
+必须在以下情况询问：
+- `external/tools/setup_state.json` 不存在。
+- `setup_state.json` 解析失败、`setup_completed` 不是 `true`，或 schema 不匹配。
+- 用户显式说"重新配置工具"、"重置 setup"、"重新 setup"。
 
-之后整个会话不再追问。
+之后默认不再追问；旧版 `.tools_decided` 标记不能替代 `setup_state.json`。
 
 ### 第一步：扫描
 
@@ -155,9 +178,10 @@
 >   - `skip` 本次都不用辅助 skill
 >   - `later` 暂跳过
 
-### 第三步：落标记
+### 第三步：落 JSON 状态
 
-按用户回答写入 `external/tools/` 下的标记文件：
+按用户回答写入 `external/tools/setup_state.json`，同时可继续写旧版标记文件以兼容
+现有子文档。
 
 | 用户选择 | 落盘 |
 |---|---|
@@ -166,7 +190,33 @@
 | `skip` | 写 `external/tools/<domain>.skip` |
 | `later` | 不写任何标记，下次入口仍会问 |
 
-四个域决定后写 `external/tools/.tools_decided`，本会话不再询问。
+七个域决定后写 `external/tools/setup_state.json`；若没有 `setup_completed: true`，
+下次入口仍必须问。
+
+最小 JSON：
+
+```json
+{
+  "schema_version": "1.0",
+  "setup_completed": true,
+  "completed_at": "2026-05-20T18:00:00+08:00",
+  "completed_by": "ez-math-model",
+  "decisions": {
+    "pdf": "free-only",
+    "scholar": "free-only",
+    "dataset": "skip",
+    "webcrawl": "skip",
+    "corpus": "skip",
+    "agent_mode": "hybrid",
+    "inherited_skills": "recommended"
+  },
+  "tool_status_snapshot": "workdir/<task_id>/tools_status.json",
+  "notes": "Do not store secrets here. Use EZMM_ env vars."
+}
+```
+
+`decisions` 必须包含 7 个 key：`pdf`、`scholar`、`dataset`、`webcrawl`、`corpus`、
+`agent_mode`、`inherited_skills`。缺 key 视为 setup 未完成，必须补问缺失项。
 
 ### 配置流程引导
 
@@ -195,6 +245,7 @@
 
 ```
 external/tools/
+├── setup_state.json            # setup 硬门禁状态，判断是否还需要强制提问
 ├── .tools_decided              # 已询问过，不再追问
 ├── pdf.free                    # 用户选了 free-only
 ├── scholar.skip                # 用户选了 skip
@@ -217,8 +268,9 @@ external/tools/
 | `workdir/{task_id}/README.md` | 是 | 由 `templates/readme_workdir.md` 渲染 |
 | `workdir/{task_id}/env_check.json` | 是 | 环境检查结果 |
 | `workdir/{task_id}/tools_status.json` | 是 | 外部工具扫描结果（discover_tools 输出） |
+| `external/tools/setup_state.json` | 首次 setup 后 | setup gate 状态；后续是否跳过交互式 setup 的唯一主标记 |
 | `workdir/{task_id}/attachments/` | 是 | 用户附件已落盘（可空） |
-| `external/tools/.tools_decided` | 首次询问后 | 询问完成标记 |
+| `external/tools/.tools_decided` | 可选兼容 | 旧版询问完成标记；不能替代 setup_state.json |
 | `external/tools/<domain>.{free,skip}` | 视用户选择 | 域级配置标记 |
 
 ## env_check.json schema
@@ -231,7 +283,8 @@ external/tools/
   "fonts_available": ["SimHei", "Microsoft YaHei"],
   "git_available": true,
   "zhanwen_status": "absent | complete | failed | skip",
-  "tools_decided": true
+  "setup_completed": true,
+  "setup_state_path": "external/tools/setup_state.json"
 }
 ```
 
@@ -244,7 +297,8 @@ external/tools/
 | 中文字体全部缺失 | 不打断。写入诊断报告，coder 阶段会回退到 DejaVu Sans，论文可能出现方块。 |
 | 工作目录创建失败（权限） | **打断**。告知具体原因。 |
 | 用户选 `yes` 但 env var 仍未配置 | 不打断。降级为 `free-only` 等价，写诊断说明哪些域降级了。 |
-| 用户已经决策过且无新需求 | 跳过工具发现节点，直接进入 pipeline 01。 |
+| 用户已经决策过且 `setup_state.json.setup_completed == true` | 跳过交互式 setup，做轻量检查后进入 pipeline 01。 |
+| 只有 `.tools_decided` 但没有 `setup_state.json` | 从旧标记迁移生成 JSON；无法补齐 7 个 decisions 时必须问用户。 |
 
 ## 下一阶段入口
 

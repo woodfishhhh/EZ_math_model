@@ -47,7 +47,7 @@ ez-math-model 内置三类工具入口：
 
 调用前**默读三件事**：
 1. 子 skill 文档的"何时启用"小节，避免无意义调用。
-2. 当前 `external/tools/.tools_decided` 与各 `<domain>.{free,skip}` 标记，跳过已禁用的源。
+2. 当前 `external/tools/setup_state.json` 与各 `<domain>.{free,skip}` 标记，跳过已禁用的源。
 3. 失败次数：同一工具同一会话内同一参数失败 ≥ 2 次 → 不再重试，写诊断改走降级链路。
 
 ## 4. 失败重试与死循环防护

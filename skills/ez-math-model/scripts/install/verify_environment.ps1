@@ -47,6 +47,19 @@ if ($zhanwen) {
   elseif (Test-Path (Join-Path $zhanwen '.failed')) { $zhanwenStatus = 'failed' }
 }
 
+$skillRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+$toolsDir = Join-Path $skillRoot 'external\tools'
+$setupStatePath = Join-Path $toolsDir 'setup_state.json'
+$setupCompleted = $false
+if (Test-Path $setupStatePath) {
+  try {
+    $setupState = Get-Content -LiteralPath $setupStatePath -Raw | ConvertFrom-Json
+    $setupCompleted = ($setupState.schema_version -eq '1.0' -and $setupState.setup_completed -eq $true)
+  } catch {
+    $setupCompleted = $false
+  }
+}
+
 $result = [ordered]@{
   python                = $python
   python_version        = $pythonVersion
@@ -57,6 +70,8 @@ $result = [ordered]@{
   libraries_missing     = $missing
   fonts_available       = $fontsAvail
   zhanwen_status        = $zhanwenStatus
+  setup_completed       = $setupCompleted
+  setup_state_path      = $setupStatePath
   platform              = "$($PSVersionTable.OS) | $($PSVersionTable.Platform)"
   checked_at            = (Get-Date -Format 'o')
 }
