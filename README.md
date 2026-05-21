@@ -6,6 +6,14 @@ EZ Math Model 是一个面向数学建模竞赛的可上架 Agent Skill。它把
 
 适用场景包括全国大学生数学建模竞赛、MCM/ICM、美赛、研究生数学建模竞赛，以及课程里的建模作业。
 
+## QQ 交流群
+
+群号：`1106854834`
+
+<p align="center">
+  <img src="assets/qq-group-1106854834.jpg" alt="EZ数学建模 QQ 群二维码" width="360">
+</p>
+
 ## 能做什么
 
 - 读取 PDF、DOCX、Markdown、CSV、XLSX 和混合附件。
@@ -99,30 +107,30 @@ gh skill install woodfishhhh/EZ_math_model skills/ez-math-model --agent codex --
 
 本节路径均相对 `skills/ez-math-model/`。
 
-| 阶段 | 文件 | 关键产出 |
-|---|---|---|
-| 00 Setup + 环境检查 | `pipeline/00-environment-setup.md` | setup 状态、`runtime/`、标准目录 |
-| 01 题目解析 | `pipeline/01-problem-intake.md` | `problem.md`、`intake.json`、`run_state.json`、附件预览 |
-| 02 建模方案 | `pipeline/02-modeling-plan.md` | `modeling_plan.md` |
-| 03 代码求解 | `pipeline/03-coding-solve.md` | `src/*.py`、`results/*`、`figures/*.png`、`chart_manifest.json` |
-| 04 论文撰写 | `pipeline/04-paper-writing.md` | `paper.md` |
-| 05 质量审查 | `pipeline/05-quality-audit.md` | `quality_report.md` |
-| 06 打包交付 | `pipeline/06-packaging-output.md` | `output/paper/*` 四格式、`output/manifest.json`、`output.zip` |
+| 阶段                | 文件                                 | 关键产出                                                                |
+| ------------------- | ------------------------------------ | ----------------------------------------------------------------------- |
+| 00 Setup + 环境检查 | `pipeline/00-environment-setup.md` | setup 状态、`runtime/`、标准目录                                      |
+| 01 题目解析         | `pipeline/01-problem-intake.md`    | `problem.md`、`intake.json`、`run_state.json`、附件预览           |
+| 02 建模方案         | `pipeline/02-modeling-plan.md`     | `modeling_plan.md`                                                    |
+| 03 代码求解         | `pipeline/03-coding-solve.md`      | `src/*.py`、`results/*`、`figures/*.png`、`chart_manifest.json` |
+| 04 论文撰写         | `pipeline/04-paper-writing.md`     | `paper.md`                                                            |
+| 05 质量审查         | `pipeline/05-quality-audit.md`     | `quality_report.md`                                                   |
+| 06 打包交付         | `pipeline/06-packaging-output.md`  | `output/paper/*` 四格式、`output/manifest.json`、`output.zip`     |
 
 ## 内置子 Skills
 
 本节路径均相对 `skills/ez-math-model/`。
 
-| 能力域 | 入口 |
-|---|---|
-| PDF 与 OCR 兜底 | `tools/pdf/SKILL.md`、`tools/mineru/SKILL.md` |
-| Word 与表格 | `tools/docx/SKILL.md`、`tools/xlsx/SKILL.md` |
-| 文献与网页上下文 | `tools/paper_search/SKILL.md`、`tools/scholar/SKILL.md`、`tools/webcrawl/SKILL.md` |
-| 公开数据集发现 | `tools/dataset/SKILL.md` |
-| 用户资料库索引 | `tools/user-corpus-explorer/SKILL.md` |
-| 流程辅助 | `tools/brainstorming/SKILL.md`、`tools/systematic-debugging/SKILL.md`、`tools/verification-before-completion/SKILL.md` |
-| 结果润色 | `tools/humanizer/SKILL.md`、`tools/simplify/SKILL.md`、`tools/scientific-slides/SKILL.md` |
-| Agent 编排 | `tools/dispatching-parallel-agents/SKILL.md`、`tools/subagent-driven-development/SKILL.md`、`tools/external-context/SKILL.md` |
+| 能力域           | 入口                                                                                                                                |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| PDF 与 OCR 兜底  | `tools/pdf/SKILL.md`、`tools/mineru/SKILL.md`                                                                                   |
+| Word 与表格      | `tools/docx/SKILL.md`、`tools/xlsx/SKILL.md`                                                                                    |
+| 文献与网页上下文 | `tools/paper_search/SKILL.md`、`tools/scholar/SKILL.md`、`tools/webcrawl/SKILL.md`                                            |
+| 公开数据集发现   | `tools/dataset/SKILL.md`                                                                                                          |
+| 用户资料库索引   | `tools/user-corpus-explorer/SKILL.md`                                                                                             |
+| 流程辅助         | `tools/brainstorming/SKILL.md`、`tools/systematic-debugging/SKILL.md`、`tools/verification-before-completion/SKILL.md`        |
+| 结果润色         | `tools/humanizer/SKILL.md`、`tools/simplify/SKILL.md`、`tools/scientific-slides/SKILL.md`                                     |
+| Agent 编排       | `tools/dispatching-parallel-agents/SKILL.md`、`tools/subagent-driven-development/SKILL.md`、`tools/external-context/SKILL.md` |
 
 完整能力关系见 [STAR_MAP.md](STAR_MAP.md)。
 
