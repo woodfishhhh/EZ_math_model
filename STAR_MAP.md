@@ -75,6 +75,7 @@ flowchart LR
 | dataset | ★★★☆☆ | `tools/dataset/SKILL.md` | public dataset discovery |
 | webcrawl | ★★★☆☆ | `tools/webcrawl/SKILL.md` | policy, industry, geography, economy context |
 | user-corpus-explorer | ★★★★☆ | `tools/user-corpus-explorer/SKILL.md` | local user reference indexing |
+| paper-orchestra | ★★★★☆ | `tools/paper-orchestra/SKILL.md` | writer-stage outline, literature, section drafting, and refinement |
 
 ## Support Constellation / 辅助星座
 

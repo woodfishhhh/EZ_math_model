@@ -6,7 +6,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch
 metadata:
   display_name: EZ Math Model
   type: workflow-skill
-  version: 1.1.0
+  version: 1.2.0
   author: woodfishhhh
   repository: https://github.com/woodfishhhh/EZ_math_model
   language_default: zh
@@ -32,7 +32,8 @@ read_when:
 > 收到题目 → 识别项目总文件夹 → 检查 `external/tools/setup_state.json` →
 > 创建 `用户输入/runtime/output` 标准目录 → 判定 `formal/demo/blocked` →
 > 识别赛事/年份/题号 → 选择模型 → 写脚本并执行 → 出图并过 chart gate →
-> 写论文 → 跑质量门 → 同步到 `output/` 并打包 `output.zip`。
+> 写论文 → 跑对象级质量门 → staging 导出与审查 → 原子同步到 `output/` 并打包
+> `output.zip`。
 
 ## 触发后的第一动作
 
@@ -45,6 +46,10 @@ read_when:
 5. `references/workdir-protocol.md` — runtime 产物结构与命名
 6. `references/chart-quality-gate.md` — 图表有效性门
 7. `references/artifact-manifest.md` — 产物 manifest 契约
+
+formal 交付不得只检查“文件是否存在”。质量门必须覆盖图表语义、公式语法、
+表格对象、优秀论文格式抽取、正文工程痕迹、DOCX/PDF 对象级导出和 zip/manifest
+一致性。
 
 然后立刻执行 setup gate：
 
@@ -69,8 +74,8 @@ read_when:
 | 02 | `pipeline/02-modeling-plan.md` | intake 完成 | `modeling_plan.md`、（首次询问 zhanwen 拉取） |
 | 03 | `pipeline/03-coding-solve.md` | modeling_plan 落盘 | `src/*.py`、`results/*`、`figures/*.png` |
 | 04 | `pipeline/04-paper-writing.md` | coding 完成 | `paper.md` |
-| 05 | `pipeline/05-quality-audit.md` | paper.md 落盘 | `quality_report.md`（含未通过项） |
-| 06 | `pipeline/06-packaging-output.md` | 质量门评估完成 | `output/paper/*` 四格式、`output/manifest.json`、`output.zip` |
+| 05 | `pipeline/05-quality-audit.md` | paper.md 落盘 | `quality_report.json`、`quality_report.md`（含证据与未通过项） |
+| 06 | `pipeline/06-packaging-output.md` | 质量门评估完成 | `export_report.json`、`export_audit.json`、`output/paper/*` 四格式、`output/manifest.json`、`output.zip` |
 
 ## 角色 prompt 索引
 
@@ -108,8 +113,9 @@ read_when:
 
 `references/exemplar-papers/` 下提供 7 篇 CUMCM / MCM 优秀论文的 markdown
 摘录（由 MinerU 从 zhanwen/MathModel 转换，前 20 页）。modeler 与 writer
-在动笔前应读取与本题最相关的 1-2 篇，**仅作风格 / 章节 / 表述参考**，禁止
-照抄。索引详见 `references/exemplar-papers/README.md`。
+在动笔前应读取与本题最相关的 1-2 篇，抽取格式规则并写
+`style_reference_notes.md`，**仅作风格 / 章节 / 表述参考**，禁止照抄或同义改写。
+索引详见 `references/exemplar-papers/README.md`。
 
 ## 容错与失败处理
 
@@ -166,6 +172,7 @@ ez-math-model 不内嵌 docx/pdf/xlsx/paper-search 实现，而是通过子 skil
 | 表格附件 | `tools/xlsx/SKILL.md` | csv / xlsx 读写 |
 | 文献检索（基础） | `tools/paper_search/SKILL.md` | OpenAlex 单源 |
 | **多源学术搜索** | `tools/scholar/SKILL.md` | OpenAlex + arXiv + S2 + SerpAPI 聚合 |
+| **论文写作编排** | `tools/paper-orchestra/SKILL.md` | writer 阶段调用 PaperOrchestra 子 skill 做大纲、文献、成文与精修 |
 | **数据集发现** | `tools/dataset/SKILL.md` | Kaggle / UCI / HuggingFace / 天池 |
 | **网页抓取** | `tools/webcrawl/SKILL.md` | Jina / Firecrawl / Tavily / Exa |
 | **用户自带 corpus** | `tools/user-corpus-explorer/SKILL.md` | 扫 `external/user-corpus/`，产出 AGENTS.md |
@@ -208,9 +215,9 @@ writer 用。详见 `tools/user-corpus-explorer/SKILL.md` 与 `external/user-cor
 | 题目无法解析（intake 阶段） | 打断，把已读到的内容存入 `problem.md` 并请求人确认 |
 | zhanwen 拉取失败 | 写 `.failed`，pipeline 切到内置模板兜底，**不打断** |
 | 单段代码执行失败 | coder 自动重试至多 2 轮（参考 `pipeline/03-coding-solve.md`），仍失败则记入 `diagnostics.md` 并继续 |
-| 单张图生成失败 | 该图在论文中跳过，写 `quality_report.md` 标记缺图，**不打断** |
-| 论文章节缺失 | 质量门记入 `quality_report.md`，但 packaging 仍打包当前结果 |
-| docx 转换失败 | 仅交付 `paper.md`，写 `diagnostics.md`，**不打断** |
+| 单张图生成失败 | 该绘图尝试写入 chart manifest 的 rejected 记录，论文中跳过，写 `quality_report.md` 标记缺图，**不打断** |
+| 论文章节缺失 | 质量门记入 `quality_report.md`；formal 模式阻塞正式打包，demo 可降级打包 |
+| docx 公式/图片/表格对象审查失败 | formal 模式阻塞正式发布；demo 模式降级并写 `diagnostics.md` |
 
 ## 运行模式与交付结构
 

@@ -15,9 +15,12 @@ It is designed for CUMCM, MCM, ICM, graduate mathematical modeling contests, and
 - Detects contest signals such as contest, year, problem number, subtasks, data files, and output language.
 - Chooses models from a built-in algorithm library covering optimization, prediction, evaluation, graph theory, statistics, comprehensive modeling, and machine learning.
 - Writes and runs Python scripts, exports result tables, and generates figures.
-- Writes a chart manifest and filters all-zero, all-equal, or otherwise uninformative figures.
-- Drafts a modeling paper in Chinese or English from structured templates.
-- Runs quality gates before packaging.
+- Writes chart manifest v2 and filters all-zero, all-equal, flat, compressed, unreadable, or language-inconsistent figures.
+- Drafts a modeling paper in Chinese or English from structured templates and extracts style rules from exemplar papers before formal writing.
+- Uses a built-in PaperOrchestra writing orchestration sub-skill for outline, literature, section drafting, and refinement discipline.
+- Runs executable quality gates for figure-text binding, formulas, tables, template residue, and pipeline artifact leakage.
+- Audits exported DOCX/PDF objects, including embedded images, Word formulas, Word tables, and PDF fallback status.
+- Publishes through a staging directory so `output/`, `manifest.json`, and `output.zip` stay consistent.
 - Produces `output/paper/paper.md`, `paper.docx`, `paper.txt`, `paper.pdf`, and packages the whole project folder as `output.zip`.
 
 ## SkillsMP-Ready Layout
@@ -120,6 +123,7 @@ Paths in this section are relative to `skills/ez-math-model/`.
 | Literature and web context | `tools/paper_search/SKILL.md`, `tools/scholar/SKILL.md`, `tools/webcrawl/SKILL.md` |
 | Dataset discovery | `tools/dataset/SKILL.md` |
 | User corpus indexing | `tools/user-corpus-explorer/SKILL.md` |
+| Paper writing orchestration | `tools/paper-orchestra/SKILL.md` |
 | Workflow support | `tools/brainstorming/SKILL.md`, `tools/systematic-debugging/SKILL.md`, `tools/verification-before-completion/SKILL.md` |
 | Optional polish | `tools/humanizer/SKILL.md`, `tools/simplify/SKILL.md`, `tools/scientific-slides/SKILL.md` |
 | Agent orchestration | `tools/dispatching-parallel-agents/SKILL.md`, `tools/subagent-driven-development/SKILL.md`, `tools/external-context/SKILL.md` |
@@ -131,6 +135,7 @@ See [STAR_MAP.md](STAR_MAP.md) for the full capability constellation.
 The repository does not vendor upstream contest papers or user files. Tool decisions and optional reference resources are placed under `skills/ez-math-model/external/` and ignored by git:
 
 - `skills/ez-math-model/external/zhanwen-mathmodel/` for optional upstream exemplar papers.
+- `skills/ez-math-model/external/paper-orchestra/` for the vendored PaperOrchestra writing skill pack.
 - `skills/ez-math-model/external/user-corpus/` for user-provided references.
 - `skills/ez-math-model/external/tools/` for local tool decisions.
 

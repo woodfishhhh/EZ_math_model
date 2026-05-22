@@ -18,6 +18,8 @@ output/manifest.json
   "task_id": "...",
   "run_mode": "formal | demo | blocked",
   "setup_status": "user_confirmed | temporary_default | skipped | incomplete",
+  "manifest_schema": "2.0",
+  "verification_policy": "verified=true requires object or required-artifact audit",
   "artifacts": [
     {
       "path": "output/paper/paper.pdf",
@@ -25,7 +27,12 @@ output/manifest.json
       "source": "runtime/.../paper.md",
       "stage": "packaging",
       "formal": true,
+      "exists": true,
       "verified": true,
+      "verification_status": "verified",
+      "size": 123456,
+      "file_count": 0,
+      "sha256": "...",
       "created_at": "...",
       "notes": ""
     }
@@ -50,14 +57,44 @@ output/manifest.json
 | `results` | `output/附件文件夹/results/` |
 | `quality_report` | `output/附件文件夹/质量检查报告.md` |
 | `diagnostics` | `output/附件文件夹/失败诊断.md` |
+| `export_report` | `output/附件文件夹/export_report.json` |
+| `export_audit` | `output/附件文件夹/export_audit.json` |
 | `project_zip` | `项目总文件夹/output.zip`，内容为总文件夹内全部内容（排除 output.zip 自身） |
 
 ## 质量门要求
 
-质量审查不得只依赖文件系统扫描。它必须读取 manifest，确认每个必登产物：
+质量审查不得只依赖文件系统扫描。manifest 也不得只由文件扫描结果生成。它必须基于
+必登产物清单逐项登记，确认每个必登产物：
 
 - 存在；
 - 类型正确；
-- `verified=true`；
+- `verification_status` 明确；
+- `verified=true` 有对应审查证据；
 - `formal` 与 `run_mode` 一致；
 - demo 产物没有被标成 formal。
+
+`verified=true` 不能表示“文件存在”。未经过 `audit_quality.py`、
+`audit_export.py` 或打包阶段必登清单验证的产物，必须写
+`verification_status=exists_only` 或 `not_checked`。缺失项不能从 manifest 中消失；
+必须登记为 `exists=false`、`verified=false`，并写入 `diagnostics.md`。
+
+## 对象级字段
+
+`paper_docx` 的 `notes` 或配套 `export_report.json` 必须记录：
+
+- `reference_doc_used` / `reference_doc_missing_reason`
+- `docx_formula_objects_count`
+- `docx_latex_fallback_count`
+- `embedded_image_count`
+- `docx_table_count`
+
+`paper_pdf` 的 `notes` 或配套 `export_report.json` 必须记录：
+
+- PDF 生成引擎；
+- 是否使用 text-only fallback；
+- `pdf_readability`；
+- `paper_pdf_high_fidelity`。
+
+`project_zip` 必须由临时 zip 验证通过后发布。为避免自引用 hash，manifest 不要求记录
+`output.zip` 自身 hash，但必须说明 zip 排除规则，并确保压缩包中包含
+`output/manifest.json`。

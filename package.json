@@ -1,6 +1,6 @@
 {
   "name": "ez-math-model",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Agent Skill for CUMCM, MCM, ICM, and contest-style mathematical modeling workflows.",
   "license": "MIT",
   "author": {
@@ -21,6 +21,7 @@
     "icm",
     "python",
     "paper-writing",
+    "paper-orchestra",
     "data-analysis"
   ],
   "files": [

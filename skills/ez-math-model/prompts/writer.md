@@ -11,6 +11,12 @@
 正式论文；`demo` 模式只能写流程验证/非正式结果；`formal` 模式不得引用 synthetic
 结果或 `usable_in_paper=false` 的图。
 
+写作前还必须加载 `tools/paper-orchestra/SKILL.md`。该子 skill 负责把 EZMM
+runtime 产物整理成 PaperOrchestra 风格的大纲、文献、成文和精修工作区；最终输出仍
+必须包含 EZMM 的 `runtime/{task_id}/paper.md`。writer 默认自动尝试
+PaperOrchestra 原生 LaTeX research-paper package 路径；若缺少模板、TeX 工具或
+必要输入，则记录降级原因并继续产出 Markdown 版 `paper.md`，不追问用户。
+
 ## 论文结构与篇幅
 
 | 章节 | 篇幅占比 | 核心 |
@@ -80,17 +86,17 @@
 
 ### 插入格式
 
-每张图独占一行：
+每张图独占一行，路径统一使用 `figures/文件名.png`：
 
 ```markdown
-![图片描述](文件名.png)
+![图片描述](figures/文件名.png)
 ```
 
 ### 规则
 
 1. coder 落盘且 `usable_in_paper=true` 的每张图都必须在论文中至少出现一次。
 2. 图片标签前后必须有至少 3 行文字对图片内容做解读分析。
-3. 使用图片**原始文件名**，不改名。
+3. 使用图片**原始文件名**，不改名，但路径必须写成 `figures/原始文件名`。
 4. 严禁仅写"如图所示"而不插入标签。
 5. 严禁引用 all-zero、all-equal、synthetic formal 冲突或未登记 manifest 的图。
 
@@ -100,7 +106,7 @@
 相关性分析结果表明，母亲 EPDS 得分与婴儿睡眠时长呈显著负相关
 (r=-0.35, p<0.01)，HADS 焦虑得分与睡醒次数呈正相关 (r=0.28, p<0.05)。
 
-![相关性热力图](fig1_correlation_heatmap.png)
+![相关性热力图](figures/fig1_correlation_heatmap.png)
 
 从热力图可以观察到，母亲心理指标之间也存在较强的共线性关系，提示在
 后续建模中需要考虑特征筛选或正则化以缓解多重共线性带来的方差膨胀。
@@ -109,6 +115,16 @@
 ```
 
 ## 各章节写作要点
+
+### PaperOrchestra 编排
+
+正式起草前先按 `tools/paper-orchestra/SKILL.md` 建立
+`runtime/{task_id}/paper_orchestra/`。用其 outline、literature review、
+section-writing 和 refinement 纪律来组织写作。默认先尝试上游 LaTeX 路径，并把
+接受后的内容桥接为 EZMM Markdown；若 LaTeX 路径不可运行，直接使用 Markdown
+适配路径。EZMM 正文仍使用 Markdown 标题、Markdown 图片、pandoc 兼容公式和
+`{[^N] ...}` 引用协议。若 PaperOrchestra 子步骤降级，写入
+`paper_orchestra/adapter_report.md`，论文正文不得出现这些工程路径或诊断内容。
 
 ### 摘要（最重要！）
 
@@ -177,6 +193,11 @@ this does not prove causation. Alternative explanations include [alternatives].
 - 行内公式：`$...$`
 - 块级公式：`$$...$$`
 - 表格用 markdown 语法。
+- 块级公式必须独立成段，`$$` 前后均保留空行。
+- 公式内部只使用 pandoc 可转换的 LaTeX 结构；避免把中文标点、解释文字、
+  `//` 伪代码或裸英文变量散落在公式外。
+- 每个块级公式后 5 行内必须说明变量含义与参数来源。
+- 落盘前扫描未闭合 `$`、裸下划线、空图片 alt、模板占位符和工程路径。
 
 ## 引用协议
 
@@ -208,7 +229,11 @@ this does not prove causation. Alternative explanations include [alternatives].
 - 模型表述方式。
 - 图表组织。
 
-**不复制原文**。如需借鉴某句话或某个公式，在参考文献中按学术规范引用。
+动笔前必须形成内部 `style_reference_notes.md`，记录参考了哪篇优秀论文、
+抽取了哪些格式规则，以及本文如何模仿这些规则。允许学习章节节奏、摘要信息密度、
+公式解释方式和图表前后衔接；禁止连续复用原文句式、同义改写原段落、
+照搬公式推导上下文。若借鉴某句话、某个公式、定义或模型结构，必须在参考文献中
+按学术规范引用。
 
 ## 输出格式
 
@@ -223,6 +248,8 @@ this does not prove causation. Alternative explanations include [alternatives].
 2. 严格使用图片实际文件名引用。
 3. 保持与用户输入一致的语言（中文题用中文写）。
 4. 绝不重复引用：每个参考文献只出现一次。
+5. 绝不把 `runtime/`、`output/`、`summary.json`、运行日志、manifest 等工程
+   产物写入正式论文正文。
 
 ## 异常处理
 

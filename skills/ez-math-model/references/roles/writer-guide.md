@@ -32,7 +32,7 @@
 5. `runtime/{task_id}/modeling_plan.md`（模型 + 公式 + 选择理由 + 参考来源）
 6. `runtime/{task_id}/execution_log.md`（哪些 quesN 完成了）
 7. `runtime/{task_id}/figures/chart_manifest.json`（可入论文图表清单）
-8. `runtime/{task_id}/figures/`（图片**文件名清单**，不读图本身）
+8. `runtime/{task_id}/figures/`（图片文件名、尺寸和必要时的实际图像预览；不能只看文件名）
 9. `runtime/{task_id}/src/*.py` **末尾的 print 块**（数据特征 + 结果汇总，
    是论文数值的唯一权威来源）
 10. `runtime/{task_id}/results/*.csv` `*.json`（必要时复述具体数值）
@@ -49,6 +49,27 @@
 - 字数：12000-18000（含正文，不含附录代码与代码注释）。
 
 ## 子工具调用法
+
+### paper-orchestra skill（写作编排）
+
+**必调**场景：
+- 进入 `pipeline/04-paper-writing` 并准备正式生成 `paper.md`；
+- 需要把建模方案、实验日志、图表和文献先整理成全局大纲；
+- 需要对论文草稿做一轮结构化精修。
+
+调用方式：
+
+```
+load tools/paper-orchestra/SKILL.md
+build runtime/{task_id}/paper_orchestra/ from EZMM runtime artifacts
+use outline + literature + section-writing + refinement protocol
+return runtime/{task_id}/paper.md and paper_orchestra/adapter_report.md
+```
+
+**默认**：自动尝试 PaperOrchestra 原生 LaTeX research-paper package 路径，并把
+接受后的内容桥接回 EZMM `paper.md`。若 LaTeX 模板、TeX 工具或必要输入不足，不
+追问用户，记录到 `paper_orchestra/adapter_report.md` 后走 Markdown 适配路径。
+无论哪条路径，最终仍要满足本守则的 Markdown、图片、引用和质量门要求。
 
 ### paper-search skill（理论文献检索）
 
@@ -88,9 +109,13 @@ writer 只产出 `paper.md`，docx 转换由 pipeline 06 调 docx skill。
 3. 读 execution_log.md，确认每问的状态（ok / failed / skipped）
 4. 读 chart_manifest.json，列出 `usable_in_paper=true` 的 png 文件名（这些必须全部出现在论文里）
 5. 读各 src/*.py 末尾的 print 块，把数值列成"数值清单"
-6. 选模板：
-   - thesis_match.template_dir 非 INTERNAL → 优先用 zhanwen 模板
+6. 调 `tools/paper-orchestra/SKILL.md` 建立 `paper_orchestra/` 工作区，生成/校验全局大纲与写作自检报告
+7. 选模板并分类：
+   - thesis_match.template_dir 非 INTERNAL → 先判断它是格式规范说明、样例论文还是可用 reference-doc
+   - 只有可解包且含 Word 样式的 `.docx` 才能作为 `--reference-doc`
+   - 格式说明文档只能抽取规则，不能直接当模板
    - 否则用 templates/paper_zh.md
+8. 抽取优秀论文格式，写 `style_reference_notes.md`
 ```
 
 ### Step 2 — 撰写顺序
@@ -144,8 +169,9 @@ writer 只产出 `paper.md`，docx 转换由 pipeline 06 调 docx skill。
 落盘前**自动扫描**：
 
 - [ ] 9 章俱在
+- [ ] 已加载 `tools/paper-orchestra/SKILL.md`，且 `paper_orchestra/adapter_report.md` 记录了调用结果或降级原因
 - [ ] 摘要含每问的"模型 + 思路 + 结果数值 + 结论"
-- [ ] `figures/` 下每张 png 都在 `paper.md` 中以 `![](文件名.png)` 出现至少一次
+- [ ] `chart_manifest.json` 中 accepted 的每张 png 都在 `paper.md` 中以 `![](figures/文件名.png)` 出现至少一次
 - [ ] 每张图前后至少有 3 行文字解读
 - [ ] 数值都来自 `src/*.py` 的 print 块或 `results/*.csv`，无编造
 - [ ] `[^N]` 编号唯一、≥ 3 条文献
@@ -187,8 +213,8 @@ writer 只产出 `paper.md`，docx 转换由 pipeline 06 调 docx skill。
 
 ### 强制规则
 
-1. `chart_manifest.json` 中 `usable_in_paper=true` 的每张 png 必须以 `![描述](文件名.png)` 出现至少一次。
-2. 文件名**原样**使用，不改名（与 coder 落盘的命名一致）。
+1. `chart_manifest.json` 中 `status=accepted` 且 `usable_in_paper=true` 的每张 png 必须以 `![描述](figures/文件名.png)` 出现至少一次。
+2. 文件名**原样**使用，不改名（与 coder 落盘的命名一致），路径统一加 `figures/` 前缀。
 3. 图片标签独占一行。
 4. 图片前 / 后至少 3 行文字解读。
 5. 解读数值都来自 coder 的 print 块。
@@ -238,6 +264,8 @@ pipeline 06 会调 docx skill 把 paper.md 转成 paper.docx。writer 不需要
 - 公式用 `$..$` / `$$..$$`（兼容 pandoc）
 - 图片用相对路径
 - 标题层级从 `#` 开始
+- 块级公式独立成段，公式后 5 行内解释变量与来源
+- 正文不得残留模板占位符或工程路径
 
 ## 文献引用协议
 
@@ -294,12 +322,15 @@ pipeline 06 会调 docx skill 把 paper.md 转成 paper.docx。writer 不需要
 - [ ] 每问 §5.X 含 5 段（分析 / 构建 / 求解 / 结果 / 分析）
 - [ ] chart_manifest 中 usable 图都被引 + ≥ 3 行解读
 - [ ] 未引用 unusable / synthetic formal 冲突图
+- [ ] 所有图片路径为 `figures/文件名.png`，且图像实际可读
 - [ ] 数值都来自 print，无编造
 - [ ] `[^N]` 唯一、≥ 3 条
-- [ ] 公式块单独成段、参数有来源
+- [ ] 公式块单独成段、参数有来源、无未闭合 `$`、无伪代码式公式
 - [ ] 优化类含"无约束 vs 约束"对比
 - [ ] 正文无 bullet（用正则扫过）
 - [ ] 段落式、被动语态为主
 - [ ] 字数 12000-18000
 - [ ] 中文 / 英文与 intake.language 一致
+- [ ] 正文无 `runtime/`、`output/`、`summary.json`、`execution_log`、
+  `artifact_manifest` 等工程产物痕迹
 

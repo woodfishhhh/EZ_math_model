@@ -8,8 +8,13 @@
 
 ## 阶段任务
 
-按 `references/workdir-protocol.md` 的"quality_report.md 必备字段"逐项
-评估，输出 `quality_report.md`。本阶段同时**汇总 L3 影子评估**：读取
+按 `references/workdir-protocol.md` 的分层质量门逐项评估，输出
+`quality_report.json` 与 `quality_report.md`。本阶段必须优先运行
+`scripts/runtime/audit_quality.py --workdir runtime/{task_id}`；该脚本给出
+每条通过项的证据路径、证据片段和 pass/warn/fail 状态。禁止只凭口头判断或
+文件存在声明通过。
+
+本阶段同时**汇总 L3 影子评估**：读取
 `runtime/{task_id}/eval_shadow.md`（若存在），把每个角色的评分附在质量门
 末尾作为参考。
 
@@ -35,7 +40,11 @@
 | 7 | 图表有效 | `chart_manifest.json` 存在；paper 只引用 `usable_in_paper=true` 图 | 解析 manifest |
 | 8 | 章节齐全 | formal 论文含 9 个固定章节标题；demo 必须标注非正式 | grep 章节标题 |
 | 9 | 文献唯一 | `paper.md` 中每个 `[^N]` 编号不重复定义 | 正则统计 |
-| 10 | 产物 manifest | 关键产物登记到 `artifact_manifest.json` 或准备由 packaging 写入 | 解析 manifest |
+| 10 | 公式有效 | `$...$` / `$$...$$` 平衡；块级公式独立成段；公式后 5 行内解释变量与来源 | `audit_quality.py` |
+| 11 | 表格有效 | Markdown 表格有表头、至少 2 行数据、无重复列名、数值列有单位 | `audit_quality.py` |
+| 12 | 模板残留与工程泄漏 | 正文无 `{...}` 占位符、写作指引、`runtime/`、`output/`、manifest、运行日志等 | `audit_quality.py` |
+| 13 | 图文绑定 | 每张图前后有足够解释，解释含可追溯数值证据 | `audit_quality.py` |
+| 14 | 产物 manifest | 关键产物登记到 `artifact_manifest.json` 或准备由 packaging 写入 | 解析 manifest |
 
 ### 图表质量硬门
 
@@ -46,8 +55,49 @@
 - chart manifest 显示 `all_zero=true` 或 `all_equal=true` 的图仍作为柱状图进入论文；
 - `filtered_zero_rows > 0` 但没有说明过滤逻辑；
 - formal 论文引用 `synthetic=true` 图。
+- `accepted` 图缺少 `chart_type`、`x_label`、`y_label`、`unit`、
+  `caption_intent`、`source_hash` 等语义字段；
+- `paper.md` 中图片路径未使用 `figures/文件名.png`；
+- `figures/*.png` 未登记 manifest，或 manifest 的 accepted 图实际不存在；
+- 图片前后解释不足，或解释没有来自 print/results 的数值证据。
 
 质量审查不得只看“PNG 是否存在”。无信息图表比没有图更糟，必须剔除。
+
+### 公式、表格与正文对象硬门
+
+formal 模式下，以下情况直接失败：
+
+- 未闭合 `$` / `$$`，或块级公式没有独立成段；
+- 公式后 5 行内没有“其中 / 参数 / 来源 / where / source”等变量说明；
+- 表格为空、表头重复、数据行少于 2 行、数值列无单位；
+- `paper.md` 残留模板占位符、写作指引、`Same structure`、`Interpretation 1`；
+- 正文出现 `runtime/`、`output/`、`summary.json`、`execution_log`、
+  `artifact_manifest` 等工程流水线痕迹。
+
+### 分层报告
+
+`quality_report.json` 必须包含：
+
+```json
+{
+  "run_mode": "formal",
+  "blocking": false,
+  "status_counts": {"pass": 12, "warn": 1, "fail": 0},
+  "quality_ceiling": "pass",
+  "gates": [
+    {
+      "gate": "formula_gate",
+      "item": "formula_syntax_and_explanation",
+      "status": "pass",
+      "detail": "...",
+      "evidence": "paper.md"
+    }
+  ]
+}
+```
+
+`blocking=true` 时不得进入正式 packaging。若用户明确要求保留不完整交付，只能降级为
+`provisional_pass`，并在最终消息中明示失败项。
 
 ### quality_report.md 格式
 
@@ -65,13 +115,17 @@
 | 7 | 图表有效 | ⚠ | 1 张图因全 0 被剔除，paper 未引用 |
 | 8 | 章节齐全 | ✓ | 9 章俱在 |
 | 9 | 文献唯一 | ✓ | 共 8 条文献，无重复 |
-| 10 | 产物 manifest | ✓ | packaging 前置登记完整 |
+| 10 | 公式有效 | ✓ | 公式分隔符平衡，块级公式均有参数说明 |
+| 11 | 表格有效 | ✓ | 共 4 张表，无空表或重复列 |
+| 12 | 模板残留与工程泄漏 | ✓ | 无占位符和运行路径泄漏 |
+| 13 | 图文绑定 | ✓ | 5 张图均有上下文解释和数值证据 |
+| 14 | 产物 manifest | ✓ | packaging 前置登记完整 |
 
 ## 总体评估
 
-通过：7 / 10
-警告：3 / 10（temporary setup 时只允许 provisional）
-失败：0 / 10
+通过：11 / 14
+警告：3 / 14（temporary setup 时只允许 provisional）
+失败：0 / 14
 
 ## 未通过项的影响
 

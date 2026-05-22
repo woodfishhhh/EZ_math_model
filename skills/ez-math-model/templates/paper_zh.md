@@ -3,6 +3,8 @@
 > **使用说明**：本模板由 ez-math-model 在 zhanwen 上游模板不可用时使用。
 > 每章末尾的 `> 写作指引` 是对 writer 的提示，落盘前必须**全部删除**。
 > 模板字数指引来自 MathModelAgent 的章节模板与 zhanwen 优秀论文统计。
+> 正式论文不得残留 `{...}` 占位符，也不得出现 `runtime/`、`output/`、
+> `summary.json`、`execution_log`、manifest 或调试日志等工程痕迹。
 
 **摘要**
 

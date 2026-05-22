@@ -23,9 +23,12 @@ EZ Math Model 是一个面向数学建模竞赛的可上架 Agent Skill。它把
 - 识别赛事、年份、题号、小问、数据附件、输出语言等信号。
 - 从内置算法库中选择优化、预测、评价、图论、统计、综合建模或机器学习方案。
 - 编写并执行 Python 脚本，导出结果表和图片。
-- 生成图表 manifest，剔除全 0、全相等、无有效信息的图表。
-- 按中文或英文模板撰写建模论文。
-- 在交付前运行质量门检查。
+- 生成图表 manifest v2，剔除全 0、全相等、平线、坐标压缩、不可读、语言不一致等废图。
+- 按中文或英文模板撰写建模论文，并在 formal 交付前抽取优秀论文格式作参考。
+- 论文手内置 PaperOrchestra 写作编排子 skill，用于大纲、文献、成文与精修。
+- 在交付前运行可执行质量门，检查图文绑定、公式、表格、模板残留和工程痕迹。
+- 导出后审查 DOCX/PDF 对象，统计嵌入图片、Word 公式、Word 表格和 PDF fallback。
+- 通过 staging 原子发布，避免 `output.zip`、manifest 和 `output/` 不一致。
 - 产出 `output/paper/paper.md`、`paper.docx`、`paper.txt`、`paper.pdf`，并把总文件夹打包为 `output.zip`。
 
 ## SkillsMP 上架结构
@@ -128,6 +131,7 @@ gh skill install woodfishhhh/EZ_math_model skills/ez-math-model --agent codex --
 | 文献与网页上下文 | `tools/paper_search/SKILL.md`、`tools/scholar/SKILL.md`、`tools/webcrawl/SKILL.md`                                            |
 | 公开数据集发现   | `tools/dataset/SKILL.md`                                                                                                          |
 | 用户资料库索引   | `tools/user-corpus-explorer/SKILL.md`                                                                                             |
+| 论文写作编排     | `tools/paper-orchestra/SKILL.md`                                                                                                  |
 | 流程辅助         | `tools/brainstorming/SKILL.md`、`tools/systematic-debugging/SKILL.md`、`tools/verification-before-completion/SKILL.md`        |
 | 结果润色         | `tools/humanizer/SKILL.md`、`tools/simplify/SKILL.md`、`tools/scientific-slides/SKILL.md`                                     |
 | Agent 编排       | `tools/dispatching-parallel-agents/SKILL.md`、`tools/subagent-driven-development/SKILL.md`、`tools/external-context/SKILL.md` |
@@ -139,6 +143,7 @@ gh skill install woodfishhhh/EZ_math_model skills/ez-math-model --agent codex --
 仓库不内置上游优秀论文和用户私有材料。工具决策和可选参考资源放在 `skills/ez-math-model/external/`，并由 `.gitignore` 排除：
 
 - `skills/ez-math-model/external/zhanwen-mathmodel/`：可选拉取的上游优秀论文。
+- `skills/ez-math-model/external/paper-orchestra/`：vendored PaperOrchestra 写作 skill pack。
 - `skills/ez-math-model/external/user-corpus/`：用户自己的论文、教材、笔记和题解。
 - `skills/ez-math-model/external/tools/`：本机工具启用决策。
 

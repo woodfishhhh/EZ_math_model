@@ -3,7 +3,7 @@
 > **唯一信息源**。pipeline 00 的"工具发现"节点据此向用户提问；各子 skill 按
 > 此处的工具名引用。新增工具先改这里，再在对应子 skill 里加细节。
 
-四个能力域：**PDF 解析 / 学术搜索 / 数据集 / 网页抓取**。每个工具标注：
+五个能力域：**PDF 解析 / 学术搜索 / 数据集 / 网页抓取 / 写作编排**。每个工具标注：
 - **价格**：免费 / 免费额度 / 付费 / 需邮箱
 - **何时启用**：触发条件
 - **配置项**：env var 名（统一前缀 `EZMM_`）
@@ -80,6 +80,22 @@
 - 题目涉及政策 / 行业 / 经济背景 → 至少配 Jina（免费）或 Tavily。
 - Firecrawl 是"爬一整个网站"的 batch 利器；单页用 Jina 即可。
 - SerpAPI 主要作用是替代谷歌学术 API，二选一即可。
+
+## 5. 写作编排
+
+| 工具 | 价格 | 何时启用 | 配置 | 文档 |
+|---|---|---|---|---|
+| **PaperOrchestra vendored pack** | 免费，MIT | writer 阶段组织大纲、文献、成文、精修 | 无 | `tools/paper-orchestra/SKILL.md` |
+
+**好处对比**：
+- PaperOrchestra 提供 outline → plotting/literature → section writing →
+  refinement 的论文写作纪律。EZMM 默认只借用该纪律，最终仍输出数学建模竞赛所需的
+  `paper.md`。
+- vendored upstream 位于 `external/paper-orchestra/`，无嵌入 LLM 调用、无内置
+  API key；实际检索仍优先走 EZMM 的 `tools/scholar/SKILL.md` /
+  `tools/paper_search/SKILL.md`。
+- 只有用户明确要求原生 LaTeX research-paper package 时，才进入上游
+  PaperOrchestra 完整 LaTeX 流程。
 
 ## env 配置约定
 

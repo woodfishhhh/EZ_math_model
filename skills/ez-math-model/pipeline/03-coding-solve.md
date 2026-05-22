@@ -86,14 +86,25 @@ while attempt < EZMM_MAX_RETRIES_CODER:   # 默认 2
 
 ### 4. 图表质量登记（强制）
 
-每张图保存前必须先校验待绘图数据，并写入
-`figures/chart_manifest.json`。至少登记：
+每一次绘图尝试都必须先校验待绘图数据，并写入
+`figures/chart_manifest.json`。通过、拒绝、跳过都要登记；被拒图可以不保存
+PNG，但必须说明拒绝原因。至少登记：
 
-- `figure`、`source`、`rows_before`、`rows_after_filter`、`filtered_zero_rows`
-- `all_zero`、`all_equal`、`synthetic`、`usable_in_paper`、`reason`
+- `schema_version`、`figure`、`status`、`chart_type`、`source`、`source_hash`
+- `metric_columns`、`x_label`、`y_label`、`unit`、`caption_intent`
+- `width_px`、`height_px`、`dpi`、`figure_exists`
+- `rows_before`、`rows_after_filter`、`filtered_zero_rows`
+- `all_zero`、`all_equal`、`near_flat`、`axis_compressed`
+- `dominant_single_color`、`label_language`、`synthetic`
+- `usable_in_paper`、`reason_code`、`reason_detail`
 
 全 0、全相等、过滤后有效行少于 2、缺单位或缺指标名的图不得进入论文。柱状图尤其
 必须剔除无意义零值行，不能把“0 值柱子”当作有效信息。
+
+图像语义同样是硬门：曲线近似水平且无法解释、轨迹被全局坐标压扁、主体占满整张图、
+单色块、标签语言与论文语言不一致、嵌入 PDF 后不可读，均不能标为
+`status=accepted`。所有 `figures/*.png` 必须能在 manifest 中按文件名找到记录；
+所有 `accepted` 图必须实际存在且 `figure_exists=true`。
 
 ### 5. Sub-agent 派单细节（可选）
 
@@ -153,7 +164,7 @@ prompt        = (
 |---|---|---|
 | `runtime/{task_id}/src/*.py` | 是 | 每个子任务一个脚本 |
 | `runtime/{task_id}/results/` | 是 | 至少 1 个结果文件；demo 结果需含 `synthetic=true` |
-| `runtime/{task_id}/figures/` | 是 | 只保存通过图表有效性检查的图 |
+| `runtime/{task_id}/figures/` | 是 | 只保存通过图表有效性与视觉语义检查的图 |
 | `runtime/{task_id}/figures/chart_manifest.json` | 是 | 图表质量登记 |
 | `runtime/{task_id}/execution_log.md` | 是 | 执行状态汇总 |
 
@@ -166,7 +177,8 @@ prompt        = (
 | 关键库（如 xgboost）缺失 | 不打断，coder 自动 fallback 到 sklearn 同类模型（参考本文件 §3 L2 降级表） |
 | 附件读取失败 | 不打断，相关子任务标记 skip 并写诊断 |
 | formal 模式下需要合成数据 | **打断该子任务**，写诊断；不得自动 fallback |
-| 图表数据全 0 / 全相等 | 不画图或标记 `usable_in_paper=false`，writer 不得引用 |
+| 图表数据全 0 / 全相等 | 登记 `status=rejected` 且 `usable_in_paper=false`，writer 不得引用 |
+| 图表视觉语义失败 | 重画；仍失败则登记 rejected，不得保存为论文图 |
 | simplify skill 已启用 | 所有子任务完成后调 `tools/simplify/SKILL.md` 写 `simplify_report.md`（不修代码） |
 
 ## 下一阶段入口

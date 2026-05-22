@@ -141,11 +141,14 @@ FIG_SQUARE = (6, 6)
 - 指标列全 0：不画图，写 diagnostics。
 - 指标列全相等：不画柱状图，改用表格或文字说明。
 - 过滤后有效行少于 2：不画对比图。
+- 曲线近似水平、坐标轴压缩、主体占满画面、单色块、标签语言不一致：
+  重画或登记 rejected。
 - 只有 `usable_in_paper=true` 的图才保存为论文图。
 
-每张图都要追加登记到 `figures/chart_manifest.json`，字段见
-`references/chart-quality-gate.md`。柱状图必须剔除无意义零值行，不能把全 0 数据
-画成看起来“完成”的图。
+每一次绘图尝试都要追加登记到 `figures/chart_manifest.json`，字段见
+`references/chart-quality-gate.md`。通过图登记 `status=accepted`，失败或跳过图登记
+`status=rejected/skipped`、`reason_code`、`reason_detail`。柱状图必须剔除无意义
+零值行，不能把全 0 数据画成看起来“完成”的图。
 
 ### 图片数量建议
 
@@ -157,8 +160,8 @@ FIG_SQUARE = (6, 6)
 ## 数据特征文本输出（关键）
 
 **每张图绑图代码后必须 `print()` 输出该图的关键数据特征**。
-原因：写论文的 Agent 看不到图，只能看 print 输出。没有特征输出，论文描述
-就会与图片不符。
+原因：writer 和质量门需要同时看图片对象、manifest 和 print 输出。没有特征输出，
+图像即使视觉上可读，也无法在论文中形成可追溯解释。
 
 ### 输出模板按图型选用
 

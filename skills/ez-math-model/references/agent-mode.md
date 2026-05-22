@@ -58,6 +58,16 @@ hybrid  ─ 关键阶段 subagent，琐碎阶段主对话直接做（默认）
 - corpus explorer：subagent。
 - 文献检索：主对话调 paper-search 脚本。
 
+formal 论文交付是高风险产物。无论 single/multi/hybrid，若宿主支持 subagent，
+pipeline 05/06 必须至少安排独立审查面：
+
+- visual reviewer：实际读取图片和图表上下文，剔除废图、平线图、压缩图、不可读图；
+- paper format reviewer：核对优秀论文格式模仿、章节层级、模板残留、工程痕迹；
+- object/export reviewer：核对公式、表格、DOCX/PDF 对象和 manifest/zip 一致性。
+
+宿主不支持 subagent 时，主对话必须按同样三张清单顺序自审，并把证据写入
+`quality_report.json`、`export_audit.json` 或 `diagnostics.md`。
+
 **特征代码**：`agent_mode = "hybrid"` → `external/tools/agent_mode.hybrid`
 
 ## 派单协议（multi / hybrid 共用）
@@ -162,8 +172,8 @@ subagent 之间**不直接通信**，只通过 `workdir/` 下的文件：
 | 03 coding 子任务 | 主（顺序） | sub（并发） | sub（并发） |
 | 04 writing | 主 | sub（章节并发） | 主 |
 | 04 文献检索 | 主 | sub | 主 |
-| 05 quality | 主 | 主 | 主 |
-| 06 packaging | 主 | 主 | 主 |
+| 05 quality | 主 + 独立审查 | 主 + 独立审查 | 主 + 独立审查 |
+| 06 packaging | 主 + 对象审查 | 主 + 对象审查 | 主 + 对象审查 |
 
 ## 不在本文档管理的内容
 

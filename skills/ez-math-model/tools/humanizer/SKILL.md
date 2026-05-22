@@ -20,7 +20,7 @@ description: Use after EZ_math_model writer creates paper.md and before quality 
 - 保留引用编号。
 - 保留公式块和行内公式。
 - 保留 Markdown 表格。
-- 保留图片标签 `![](xxx.png)`。
+- 保留图片标签 `![](figures/xxx.png)`。
 - 不修改章节标题。
 
 默认写到：
@@ -31,6 +31,21 @@ workdir/{task_id}/humanizer_diff.md
 ```
 
 只有用户显式开启 `--humanize-overwrite` 时才覆盖 `paper.md`。
+
+## 结构化 diff 硬门
+
+humanizer 后必须生成 `humanizer_diff.md`，并至少比较以下集合：
+
+- 数值集合；
+- 引用编号集合；
+- 公式块 hash 集合；
+- 图片引用集合；
+- Markdown 表格数量；
+- 一级/二级标题集合。
+
+任一集合变化时，不得覆盖 `paper.md`；只能保留 `paper.humanized.md`，并在
+`diagnostics.md` 中记录。quality audit 必须检查实际打包版本，不能审原文却打包
+humanized 版本。
 
 ## 检查重点
 

@@ -36,7 +36,11 @@ runtime/{task_id}/
 ├── execution_log.md
 ├── paper.md
 ├── quality_report.md
+├── quality_report.json
 ├── diagnostics.md
+├── export_report.json
+├── export_audit.md
+├── export_audit.json
 ├── artifact_manifest.json
 ├── logs/
 ├── tmp/
@@ -60,6 +64,9 @@ output/
 │   ├── attachments/
 │   ├── 质量检查报告.md
 │   ├── 失败诊断.md
+│   ├── export_report.json
+│   ├── export_audit.json
+│   ├── 导出对象审查.md
 │   └── run_state.json
 └── manifest.json
 ```
@@ -117,9 +124,11 @@ output/
 }
 ```
 
-## quality_report.md 必备字段
+## quality_report 必备字段
 
-固定 10 项检查（细节见 `pipeline/05-quality-audit.md`）：
+质量报告分为 `quality_report.json` 与 `quality_report.md`。JSON 是机器可审查的
+单一事实源，Markdown 是人读摘要。固定分层检查如下（细节见
+`pipeline/05-quality-audit.md`）：
 
 | 检查项 | 通过条件 |
 |---|---|
@@ -132,7 +141,39 @@ output/
 | 图表有效 | `chart_manifest.json` 存在，paper 只引用 `usable_in_paper=true` 图 |
 | 章节齐全 | formal 论文含摘要、问题重述、问题分析、模型假设、符号说明、模型建立与求解、敏感性、模型评价、参考文献 |
 | 文献唯一 | `paper.md` 中 `[^N]` 编号无重复定义 |
+| 公式有效 | 公式分隔符平衡、块级公式独立成段、参数来源可追溯 |
+| 表格有效 | 表头完整、至少 2 行数据、无重复表头、数值列有单位 |
+| 模板残留与工程泄漏 | 正文无占位符、写作指引、runtime/output/manifest 等工程痕迹 |
+| 图文绑定 | 每张图前后有解释，解释含来自 print/results 的数值证据 |
 | 产物 manifest | 必登产物存在、类型正确、formal 标记与 run_mode 一致 |
+
+`quality_report.json` 必须包含 `run_mode`、`blocking`、`status_counts`、
+`quality_ceiling` 和 `gates[]`。每个 gate 必须包含 `gate`、`item`、`status`、
+`detail`、`evidence`。
+
+## export_audit.json
+
+packaging 阶段导出后必须生成对象审查报告：
+
+```json
+{
+  "run_mode": "formal",
+  "blocking": false,
+  "quality_ceiling": "pass",
+  "metrics": {
+    "markdown_image_refs": 5,
+    "markdown_block_formulas": 8,
+    "markdown_tables": 4,
+    "docx_formula_objects_count": 8,
+    "embedded_image_count": 5,
+    "docx_table_count": 4,
+    "pdf_fallback": false,
+    "pdf_readability": "pandoc_pdf"
+  }
+}
+```
+
+formal 模式下，`blocking=true` 不得发布正式包。
 
 ## diagnostics.md
 
@@ -170,3 +211,6 @@ output/
 - 每个 pipeline 阶段开始时检查自身入口条件文件是否齐全，缺失直接打断。
 - 若用户希望从中间阶段重跑，可复制对应 `runtime/{task_id}` 后从该阶段启动。
 - packaging 阶段必须重新同步 `output/`，不能只复用旧 `deliverable.zip`。
+- packaging 必须先写入 staging 输出目录，临时 zip 验证通过后再发布；失败时保留旧
+  `output/`。
+- 新 `output.zip` 不得包含历史 `runtime/*/deliverable.zip`，避免 stale artifact 嵌套。

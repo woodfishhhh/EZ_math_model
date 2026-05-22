@@ -19,6 +19,16 @@ description: Use when EZ_math_model needs to read or convert PDF problem stateme
 3. `pdfplumber` 文本和表格提取。
 4. 图像 OCR 兜底。
 
+## 论文 PDF 导出兜底
+
+`scripts/runtime/export_paper.ps1` 的 simple text-only PDF 只用于占位交付。该兜底
+使用基础字体，非 ASCII 字符会被替换为 `?`，因此中文 formal 论文不能把它视为
+高保真 PDF。出现该兜底时必须：
+
+- 在 `export_report.json` 中写 `pdf_fallback` 与 `paper_pdf_high_fidelity=false`；
+- 在 `export_audit.json` 中标记 `pdf_readability=placeholder` 或 warning；
+- 最终质量等级最高为 `provisional_pass`。
+
 ## 题目 PDF 转 Markdown
 
 ```python

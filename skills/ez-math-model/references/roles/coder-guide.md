@@ -136,8 +136,9 @@ print(f"几何关系验证：tan(α) = {np.tan(alpha):.4f} vs 题目要求 {H/L:
 - 时序数据：必须用 `TimeSeriesSplit` 或手动按时间切，禁止 `shuffle=True`。
 - 标准化 / 编码：仅在训练集 fit。
 - formal 模式下附件缺失或字段缺失时写诊断并停止该子任务，不得生成 demo 数据。
-- 每张图保存前按 `references/chart-quality-gate.md` 写入 chart manifest；全 0 或全相等
-  图不得标为 `usable_in_paper=true`。
+- 每一次绘图尝试都按 `references/chart-quality-gate.md` 写入 chart manifest；全 0、
+  全相等、近似平线、坐标压缩、主体不可读、语言不一致的图不得标为
+  `status=accepted` 或 `usable_in_paper=true`。
 
 ### Step 5 — 优化类问题特殊段
 

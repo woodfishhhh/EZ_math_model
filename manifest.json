@@ -1,7 +1,7 @@
 {
   "name": "ez-math-model",
   "display_name": "EZ Math Model",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "数学建模一站式 skill：拆题、建模、求解、出图、写论文、质量门、打包。",
   "license": "MIT",
   "author": {
@@ -23,7 +23,7 @@
     "package": "package.json",
     "targets": ["Codex", "Claude Code", "Agent Skills"],
     "categories": ["Education", "Data Science", "Research", "Writing"],
-    "tags": ["mathematical modeling", "CUMCM", "MCM", "ICM", "Python", "academic writing"]
+    "tags": ["mathematical modeling", "CUMCM", "MCM", "ICM", "Python", "academic writing", "PaperOrchestra"]
   },
   "pipeline": [
     "skills/ez-math-model/pipeline/00-environment-setup.md",
@@ -73,6 +73,7 @@
     "external_context": "skills/ez-math-model/tools/external-context/SKILL.md",
     "humanizer": "skills/ez-math-model/tools/humanizer/SKILL.md",
     "mineru": "skills/ez-math-model/tools/mineru/SKILL.md",
+    "paper_orchestra": "skills/ez-math-model/tools/paper-orchestra/SKILL.md",
     "paper_search": "skills/ez-math-model/tools/paper_search/SKILL.md",
     "pdf": "skills/ez-math-model/tools/pdf/SKILL.md",
     "scholar": "skills/ez-math-model/tools/scholar/SKILL.md",
@@ -94,7 +95,9 @@
     },
     "runtime": {
       "init_workdir_ps1": "skills/ez-math-model/scripts/runtime/init_workdir.ps1",
+      "audit_quality_py": "skills/ez-math-model/scripts/runtime/audit_quality.py",
       "export_paper_ps1": "skills/ez-math-model/scripts/runtime/export_paper.ps1",
+      "audit_export_py": "skills/ez-math-model/scripts/runtime/audit_export.py",
       "match_thesis_py": "skills/ez-math-model/scripts/runtime/match_thesis.py",
       "pack_deliverable_ps1": "skills/ez-math-model/scripts/runtime/pack_deliverable.ps1"
     }
@@ -120,6 +123,15 @@
         "skip": "skills/ez-math-model/external/zhanwen-mathmodel/.skip"
       },
       "license_note": "上游内容版权归原作者所有，仅供本机学术参考；不复制不分发不入库。"
+    },
+    "paper_orchestra": {
+      "upstream": "https://github.com/Ar9av/PaperOrchestra",
+      "local_dir": "skills/ez-math-model/external/paper-orchestra",
+      "adapter": "skills/ez-math-model/tools/paper-orchestra/SKILL.md",
+      "entrypoint": "skills/ez-math-model/external/paper-orchestra/skills/paper-orchestra/SKILL.md",
+      "used_by": "writer",
+      "mode": "default PaperOrchestra-first writer route with EZMM Markdown compatibility output",
+      "license_note": "MIT; keep upstream LICENSE and CITATION.cff and cite PaperOrchestra when its workflow shapes the final paper."
     },
     "tools_decisions": {
       "local_dir": "skills/ez-math-model/external/tools",

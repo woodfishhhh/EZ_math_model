@@ -32,7 +32,8 @@ output.zip
 ```
 
 `output.zip` 必须包含项目总文件夹内的全部内容（`用户输入/`、`runtime/`、`output/`
-等），但排除 `output.zip` 自身，避免递归打包。
+等），但排除 `output.zip` 自身、临时 zip、`runtime/*/deliverable.zip` 历史兼容包，
+避免递归打包和 stale artifact 嵌套。
 
 ## 根目录识别
 

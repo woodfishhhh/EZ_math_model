@@ -1,5 +1,10 @@
 # {Title}
 
+> Writing guidance: all placeholders, brace markers, prompts, bullets in body
+> sections, and instructional text must be removed before `paper.md` is saved.
+> Formal papers must not contain pipeline paths such as `runtime/`, `output/`,
+> `summary.json`, `execution_log`, or manifest/debug text.
+
 **Abstract**
 
 Background paragraph (~100 words): describe the real-world setting, why this

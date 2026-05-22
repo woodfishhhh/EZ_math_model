@@ -30,8 +30,10 @@ LLM 不直接执行 git / 文件系统重活。
 |---|---|---|---|---|
 | `init_workdir.ps1` | Windows | 创建 `runtime/{YYYYMMDD-HHMMSS}-{8位hash}/` 骨架、标准 `用户输入/runtime/output` 目录并渲染 README | `-ProjectRoot -Title -Language -Contest -Year -ProblemLetter` | stdout JSON `{task_id, task_dir, output_root}` |
 | `match_thesis.py` | 任意 Python | 题目纯文本 → 上游优秀论文路径匹配 | stdin 或 `--problem-text`，`--root` 指定仓库根 | stdout JSON（schema 见 `references/workdir-protocol.md`） |
-| `export_paper.ps1` | Windows | 把 `paper.md` 导出到 `output/paper/paper.md|docx|txt|pdf` | `-WorkDir <runtime task dir>` | stdout JSON 导出状态 |
-| `pack_deliverable.ps1` | Windows | 同步 runtime 产物到 `output/` 并生成项目根目录 `output.zip` | `-WorkDir <runtime task dir>` | stdout 输出 zip 路径 |
+| `audit_quality.py` | 任意 Python | pre-export 质量门：正文、图文、公式、表格、模板残留 | `--workdir <runtime task dir>` | `quality_report.json/md`，blocking 时返回非零 |
+| `export_paper.ps1` | Windows | 把 `paper.md` 导出到 `output/paper/paper.md|docx|txt|pdf` 并统计对象指标 | `-WorkDir <runtime task dir>` | stdout JSON + `export_report.json` |
+| `audit_export.py` | 任意 Python | post-export 对象审查：DOCX 图片/公式/表格，PDF 可读性 | `--workdir <runtime> --paper-output <dir>` | `export_audit.json/md`，blocking 时返回非零 |
+| `pack_deliverable.ps1` | Windows | staging 原子发布 runtime 产物到 `output/` 并生成项目根目录 `output.zip` | `-WorkDir <runtime task dir>` | stdout 输出 zip 路径 |
 
 ### match_thesis.py 测试样例
 
